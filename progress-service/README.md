@@ -73,14 +73,6 @@ npm run lint
 
 ---
 
-## 💻 Vista del Usuario (Frontend)
-
-El frontend está conectado directamente con el backend y puede ser visitado en:
-
-👉 **[http://localhost:3000/vista](http://localhost:3000/vista)** (o directamente en **[http://localhost:3000/](http://localhost:3000/)**)
-
----
-
 ## 📖 Documentación Swagger
 
 Una vez iniciado el servidor, accede a la interfaz Swagger interactiva:
@@ -164,7 +156,7 @@ La API exige un JWT OIDC firmado (JWKS, issuer y audience configurables). Copia 
 
 Al completar un modulo se persiste el avance y el evento `ModuloCompletado` dentro del mismo documento Mongo. Un publicador en segundo plano reintenta con backoff, declara la cola durable `community.modulo-completado` y la enlaza al exchange `aulabreve.domain.events` con la routing key `ModuloCompletado`. Asi CommunityService puede estar temporalmente apagado sin perder el evento.
 
-Los endpoints de progreso requieren `Authorization: Bearer <token>`. La ruta `POST /progreso/modulo/completar-leccion` también requiere `Idempotency-Key`. El frontend no obtiene tokens OIDC por sí solo; para usar la API desde una interfaz debe integrarse con el proveedor de identidad configurado.
+Los endpoints de progreso requieren `Authorization: Bearer <token>`. La ruta `POST /progreso/modulo/completar-leccion` también requiere `Idempotency-Key`. El consumidor de la API debe integrar el proveedor de identidad configurado y enviar el token correspondiente.
 
 
 ## Arquitectura MVC
@@ -175,7 +167,7 @@ El backend organiza el flujo de progreso con responsabilidades separadas:
 - **Controlador:** `src/controllers/progreso.controller.ts` expone las rutas REST, toma parámetros/headers y delega el trabajo. No calcula porcentajes ni accede directamente a Mongo.
 - **Repositorio:** `src/repositories/` encapsula las consultas y escrituras Mongoose para progreso de curso y módulo; los servicios no inyectan directamente modelos de base de datos.
 - **Servicio:** `src/services/progreso.service.ts` contiene el flujo compatible por curso; `src/services/progreso-modulo.service.ts` valida Catálogo, completa lecciones por versión, recalcula avance y crea el evento outbox.
-- **Vista/API:** `src/views/progreso.view.ts` transforma documentos Mongo a respuestas JSON y oculta `_id`/`__v`, manteniendo los campos que usa la interfaz.
+- **Serialización de respuestas:** `src/views/progreso.view.ts` transforma documentos Mongo a respuestas JSON y oculta `_id`/`__v`.
 - **Integraciones:** `src/integrations/` contiene el cliente de Catálogo; `src/security/` valida JWT; `src/messaging/outbox.publisher.ts` publica eventos a RabbitMQ.
 
-`AppController` cubre infraestructura HTTP general: `GET /api/health` delega en `AppService`, y `GET /vista` entrega la interfaz. El frontend además se sirve como archivos estáticos desde `main.ts`. No contiene reglas de avance.
+`AppController` cubre infraestructura HTTP general: `GET /api/health` delega en `AppService`. Las rutas de progreso están en `ProgresoController`; este servicio expone únicamente API HTTP y documentación Swagger.

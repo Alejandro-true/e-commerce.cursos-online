@@ -1,4 +1,3 @@
-import type { Response } from 'express';
 import { AppService } from './app.service';
 export declare class AppController {
     private readonly appService;
@@ -8,5 +7,4 @@ export declare class AppController {
         service: string;
         timestamp: string;
     };
-    getVista(res: Response): void | Response<any, Record<string, any>>;
 }
