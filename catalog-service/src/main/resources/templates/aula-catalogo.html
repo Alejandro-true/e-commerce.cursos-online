@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="_csrf" th:content="${_csrf.token}">
+  <meta name="_csrf_header" th:content="${_csrf.headerName}">
+  <title>AulaBreve | Catálogo público</title>
+  <link rel="stylesheet" href="/css/aula-demo.css">
+<meta name="ab-rol-admin" th:content="${navAdmin}">
+</head>
+<body>
+<header><div class="brand">Aula<span>Breve</span> <span class="muted">DEMO</span></div>
+<nav aria-label="Navegacion principal">
+  <a th:href="@{/demo/aula/catalogo}">Catalogo</a>
+  <a th:if="${navEstudiante}" th:href="@{/demo/aula/mis-cursos}">Mis cursos</a>
+  <a th:if="${navAdmin}" th:href="@{/demo/aula/admin}">Panel administrador</a>
+  <a th:if="${navAutenticado}" th:href="@{/cuenta}">Mi cuenta</a>
+  <a th:unless="${navAutenticado}" th:href="@{/ingresar}">Iniciar sesion</a>
+  <a th:unless="${navAutenticado}" th:href="@{/registro}">Registrarse</a>
+  <form th:if="${navAutenticado}" th:action="@{/salir}" method="post" style="margin:0">
+    <button type="submit" class="secondary" style="padding:0;background:transparent;color:#1556a5;font-size:14px;font-weight:650;">Cerrar sesion</button>
+  </form>
+</nav></header>
+<main>
+  <section class="panel hero">
+    <h1>Cursos online, a tu ritmo</h1>
+    <p class="lead">Explora los cursos sin registrarte. Para comprar, crea tu cuenta o inicia sesión. La aprobación del pago se simula desde el panel administrador.</p>
+    <div id="sesion" class="notice" role="status">Comprobando si tienes sesión...</div>
+    <div class="row">
+      <div style="flex:1;min-width:180px"><label for="buscar">Buscar cursos</label><input id="buscar" class="search" placeholder="Título o descripción"></div>
+      <div style="align-self:flex-end"><button id="btn-buscar">Buscar</button></div>
+    </div>
+  </section>
+  <div id="mensaje" class="notice" role="status">Cargando catálogo...</div>
+  <section class="grid" id="cursos" aria-label="Catálogo de cursos"></section>
+  <section id="seccion-compras" class="panel" hidden>
+    <h2>Mis solicitudes de compra</h2>
+    <p>Las solicitudes pendientes deben aprobarse desde el panel administrador.</p>
+    <div id="mis-compras" class="tablewrap"></div>
+    <button id="actualizar" class="secondary">Actualizar estados</button>
+  </section>
+</main>
+<footer>Entorno educativo local · Catálogo público · La identidad de compra se obtiene de la sesión del servidor.</footer>
+<script src="/js/aula-catalogo.js" defer></script>
+</body></html>

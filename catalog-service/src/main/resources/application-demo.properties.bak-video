@@ -1,0 +1,6 @@
+# Solo para ejecucion LOCAL de AulaBreve en clase.
+server.address=127.0.0.1
+app.demo.base-url=http://127.0.0.1:${server.port:8080}
+app.demo.allow-loopback-checkout=true
+app.demo.api-key=${DEMO_API_KEY}
+app.demo.webhook-secret=${DEMO_WEBHOOK_SECRET}

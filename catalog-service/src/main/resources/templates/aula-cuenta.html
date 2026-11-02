@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mi cuenta | AulaBreve</title><link rel="stylesheet" href="/css/aula-cuenta.css"></head>
+<body>
+<header><a href="/demo/aula/catalogo" class="marca">Aula<span>Breve</span></a><a href="/demo/aula/catalogo">Catálogo público</a></header>
+<main><section class="tarjeta">
+<h1>Mi cuenta</h1><p>Has iniciado sesión correctamente.</p>
+<dl><dt>Nombre</dt><dd th:text="${nombre}">Nombre</dd>
+<dt>Correo</dt><dd th:text="${email}">email@example.com</dd>
+<dt>Identificador estable (UUID)</dt><dd class="identificador" th:text="${usuarioId}">UUID</dd>
+<dt>Rol</dt><dd th:text="${rol}">ROLE_ESTUDIANTE</dd></dl>
+<p class="aviso" id="mensaje-retorno">Tu sesión ya está vinculada a tus compras y cursos. Puedes comprar desde el catálogo sin enviar tu identificador.</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
+<a id="continuar" style="background:#195da5;color:white;padding:11px 16px;border-radius:8px;text-decoration:none" href="/demo/aula/catalogo">Ir al catálogo y comprar</a>
+<a style="background:#e7eff8;color:#183856;padding:11px 16px;border-radius:8px;text-decoration:none" href="/demo/aula/mis-cursos">Mis cursos</a>
+<a th:if="${rol == 'ROLE_ADMIN'}" style="background:#e7eff8;color:#183856;padding:11px 16px;border-radius:8px;text-decoration:none" href="/demo/aula/admin">Panel administrador</a>
+</div>
+<form th:action="@{/salir}" method="post"><button type="submit">Cerrar sesión</button></form>
+</section></main>
+<footer>Las compras y la autorización de acceso usan el UUID del usuario de la sesión.</footer>
+<script>
+try {
+  const pendiente=sessionStorage.getItem('aulabreve-curso-pendiente');
+  if(pendiente && /^[0-9a-f-]{36}$/i.test(pendiente)) {
+    document.getElementById('continuar').href='/demo/aula/catalogo?comprar='+encodeURIComponent(pendiente);
+    document.getElementById('continuar').textContent='Continuar con el curso seleccionado';
+    document.getElementById('mensaje-retorno').textContent='Sesión iniciada. Puedes continuar la compra que habías seleccionado.';
+  }
+} catch(e) { /* sessionStorage podría estar desactivado. */ }
+</script>
+</body></html>
