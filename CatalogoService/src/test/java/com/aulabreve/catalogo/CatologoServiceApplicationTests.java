@@ -1,10 +1,10 @@
-package com.aulabreve.catologo;
+package com.aulabreve.catalogo;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class CatologoServiceApplicationTests {
+class CatalogoServiceApplicationTests {
 
 	@Test
 	void contextLoads() {
