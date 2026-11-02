@@ -8,15 +8,7 @@
   const root = '/api/demo/admin/contenido';
 
   async function api(ruta, opciones = {}) {
-    const clave = el('clave').value;
-    if (!clave) throw new Error('Introduce la clave DEMO del administrador.');
-    const r = await fetch(root + ruta, {
-      ...opciones,
-      headers: {'X-Demo-Key':clave, ...(opciones.headers||{})}
-    });
-    const json = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(json.error || `Error HTTP ${r.status}`);
-    return json;
+    return window.AulaAdminFetch(root + ruta, opciones);
   }
   function aviso(mensaje,error=false){
     const caja=el('contenido-mensaje'); caja.textContent=mensaje;

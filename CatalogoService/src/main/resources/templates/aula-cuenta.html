@@ -14,6 +14,7 @@
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
 <a id="continuar" style="background:#195da5;color:white;padding:11px 16px;border-radius:8px;text-decoration:none" href="/demo/aula/catalogo">Ir al catálogo y comprar</a>
 <a style="background:#e7eff8;color:#183856;padding:11px 16px;border-radius:8px;text-decoration:none" href="/demo/aula/mis-cursos">Mis cursos</a>
+<a th:if="${rol == 'ROLE_ADMIN'}" style="background:#e7eff8;color:#183856;padding:11px 16px;border-radius:8px;text-decoration:none" href="/demo/aula/admin">Panel administrador</a>
 </div>
 <form th:action="@{/salir}" method="post"><button type="submit">Cerrar sesión</button></form>
 </section></main>

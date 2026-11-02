@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AulaBreve | Mis cursos</title><link rel="stylesheet" href="/css/aula-demo.css"></head>
+<body><header><div class="brand">Aula<span>Breve</span> <span class="muted">DEMO</span></div>
+<nav><a href="/demo/aula/catalogo">Catálogo</a><a href="/demo/aula/mis-cursos">Mis cursos</a><a href="/cuenta">Mi cuenta</a></nav></header>
+<main><section class="panel hero"><h1>Mis cursos</h1>
+<p>Solo aparecen los cursos con derecho de acceso ACTIVO y vigente de la cuenta que ha iniciado sesión.</p>
+<div class="row"><span id="identidad" class="muted">Comprobando identidad...</span><button id="refrescar">Actualizar</button></div></section>
+<div id="mensaje" class="notice" role="status">Consultando derechos de acceso...</div>
+<section class="grid" id="cursos"></section></main>
+<footer>Contenido protegido por la sesión autenticada. La reproducción de video se implementará en RF07.</footer>
+<script src="/js/aula-mis-cursos.js" defer></script></body></html>

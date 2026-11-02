@@ -12,6 +12,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/** El rol ADMIN se comprueba en SeguridadAdministradorDemoConfig, no aqui. */
 @ExtendWith(MockitoExtension.class)
 class DemoPanelAdminControllerTest {
     @Mock DemoApiGuard guard;
@@ -20,11 +21,22 @@ class DemoPanelAdminControllerTest {
     @InjectMocks DemoPanelAdminController admin;
 
     @Test
-    void claveIncorrectaNoPuedeAprobarCompra() {
-        UUID compraId=UUID.randomUUID();
-        doThrow(new SecurityException("Clave incorrecta")).when(guard).exigir("mala");
-        assertThrows(SecurityException.class, () -> admin.decidir(
-            "mala", compraId, new DemoPanelAdminController.Decision("APROBADO")));
+    void decisionValidaInvocaSimuladorSinClaveCompartida() {
+        UUID id = UUID.randomUUID();
+        var esperado = new DemoSimuladorPagoService.ResultadoDemo(id, UUID.randomUUID(),
+                true, "PAGADO", "ACTIVO");
+        when(simulador.simular(id, DemoSimuladorPagoService.Resultado.APROBADO))
+                .thenReturn(esperado);
+        var respuesta = admin.decidir(null, id,
+                new DemoPanelAdminController.Decision("APROBADO"));
+        assertEquals("PAGADO", respuesta.estadoCompra());
+        verifyNoInteractions(guard);
+    }
+
+    @Test
+    void decisionInvalidaNoLlamaAlSimulador() {
+        assertThrows(IllegalArgumentException.class, () -> admin.decidir(
+                null, UUID.randomUUID(), new DemoPanelAdminController.Decision("INVENTADO")));
         verifyNoInteractions(simulador);
     }
 }

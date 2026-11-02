@@ -4,6 +4,7 @@ const baseCuenta='/api/demo/cuenta';
 const $=id=>document.getElementById(id);
 let identidad=null;
 let comprasActuales=[];
+const modoAdmin = document.querySelector('meta[name="ab-rol-admin"]')?.content === 'true';
 const cursoPendiente=(()=>{try { return sessionStorage.getItem('aulabreve-curso-pendiente'); }catch{return null;}})();
 
 function mensaje(texto,error=false){$('mensaje').textContent=texto;$('mensaje').className='notice'+(error?' error':'');}
@@ -22,6 +23,12 @@ function csrfHeaders(){
  return {'Content-Type':'application/json',[header]:token};
 }
 async function cargarIdentidad(){
+ if(modoAdmin){
+  identidad=null;
+  $('sesion').textContent='Has iniciado sesion como administrador. Puedes consultar el catalogo; solo los estudiantes pueden comprar.';
+  $('seccion-compras').hidden=true;
+  return;
+ }
  try{
   identidad=await pedir(baseCuenta+'/yo');
   $('sesion').textContent='Has iniciado sesión como '+identidad.nombre+' ('+identidad.email+').';
@@ -69,6 +76,7 @@ async function cargarCatalogo(){
    const delCurso=comprasActuales.filter(c=>c.cursoId===curso.id);
    if(delCurso.some(c=>c.acceso==='ACTIVO')){btn.textContent='Ya tienes este curso';btn.disabled=true;}
    else if(delCurso.some(c=>c.estado==='PENDIENTE')){btn.textContent='Solicitud pendiente';btn.disabled=true;}
+   else if(modoAdmin){btn.textContent='Solo estudiantes pueden comprar';btn.disabled=true;}
    else{btn.textContent=identidad?'Solicitar compra':'Regístrate para comprar';btn.onclick=()=>comprar(curso.id,btn);}
    row.append(info,btn);art.append(cat,h,p,price,row);panel.appendChild(art);
   }

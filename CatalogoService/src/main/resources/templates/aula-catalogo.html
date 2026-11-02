@@ -6,10 +6,21 @@
   <meta name="_csrf_header" th:content="${_csrf.headerName}">
   <title>AulaBreve | Catálogo público</title>
   <link rel="stylesheet" href="/css/aula-demo.css">
+<meta name="ab-rol-admin" th:content="${navAdmin}">
 </head>
 <body>
 <header><div class="brand">Aula<span>Breve</span> <span class="muted">DEMO</span></div>
-<nav><a href="/demo/aula/catalogo">Catálogo</a><a href="/demo/aula/mis-cursos">Mis cursos</a><a href="/cuenta">Mi cuenta</a><a href="/ingresar">Iniciar sesión</a><a href="/registro">Registrarse</a></nav></header>
+<nav aria-label="Navegacion principal">
+  <a th:href="@{/demo/aula/catalogo}">Catalogo</a>
+  <a th:if="${navEstudiante}" th:href="@{/demo/aula/mis-cursos}">Mis cursos</a>
+  <a th:if="${navAdmin}" th:href="@{/demo/aula/admin}">Panel administrador</a>
+  <a th:if="${navAutenticado}" th:href="@{/cuenta}">Mi cuenta</a>
+  <a th:unless="${navAutenticado}" th:href="@{/ingresar}">Iniciar sesion</a>
+  <a th:unless="${navAutenticado}" th:href="@{/registro}">Registrarse</a>
+  <form th:if="${navAutenticado}" th:action="@{/salir}" method="post" style="margin:0">
+    <button type="submit" class="secondary" style="padding:0;background:transparent;color:#1556a5;font-size:14px;font-weight:650;">Cerrar sesion</button>
+  </form>
+</nav></header>
 <main>
   <section class="panel hero">
     <h1>Cursos online, a tu ritmo</h1>

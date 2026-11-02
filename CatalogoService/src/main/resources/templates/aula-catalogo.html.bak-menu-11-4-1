@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="_csrf" th:content="${_csrf.token}">
+  <meta name="_csrf_header" th:content="${_csrf.headerName}">
+  <title>AulaBreve | Catálogo público</title>
+  <link rel="stylesheet" href="/css/aula-demo.css">
+</head>
+<body>
+<header><div class="brand">Aula<span>Breve</span> <span class="muted">DEMO</span></div>
+<nav><a href="/demo/aula/catalogo">Catálogo</a><a href="/demo/aula/mis-cursos">Mis cursos</a><a href="/cuenta">Mi cuenta</a><a href="/ingresar">Iniciar sesión</a><a href="/registro">Registrarse</a></nav></header>
+<main>
+  <section class="panel hero">
+    <h1>Cursos online, a tu ritmo</h1>
+    <p class="lead">Explora los cursos sin registrarte. Para comprar, crea tu cuenta o inicia sesión. La aprobación del pago se simula desde el panel administrador.</p>
+    <div id="sesion" class="notice" role="status">Comprobando si tienes sesión...</div>
+    <div class="row">
+      <div style="flex:1;min-width:180px"><label for="buscar">Buscar cursos</label><input id="buscar" class="search" placeholder="Título o descripción"></div>
+      <div style="align-self:flex-end"><button id="btn-buscar">Buscar</button></div>
+    </div>
+  </section>
+  <div id="mensaje" class="notice" role="status">Cargando catálogo...</div>
+  <section class="grid" id="cursos" aria-label="Catálogo de cursos"></section>
+  <section id="seccion-compras" class="panel" hidden>
+    <h2>Mis solicitudes de compra</h2>
+    <p>Las solicitudes pendientes deben aprobarse desde el panel administrador.</p>
+    <div id="mis-compras" class="tablewrap"></div>
+    <button id="actualizar" class="secondary">Actualizar estados</button>
+  </section>
+</main>
+<footer>Entorno educativo local · Catálogo público · La identidad de compra se obtiene de la sesión del servidor.</footer>
+<script src="/js/aula-catalogo.js" defer></script>
+</body></html>

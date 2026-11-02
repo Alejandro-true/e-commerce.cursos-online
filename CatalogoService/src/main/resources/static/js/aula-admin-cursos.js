@@ -7,17 +7,8 @@
   let categorias = [];
 
   async function apiCursos(path = '', opciones = {}) {
-    const clave = el('clave').value;
-    if (!clave) throw new Error('Introduce la clave DEMO del administrador.');
-    const respuesta = await fetch(raiz + path, {
-      ...opciones,
-      headers: {'X-Demo-Key': clave, ...(opciones.headers || {})}
-    });
-    const datos = await respuesta.json().catch(() => ({}));
-    if (!respuesta.ok) throw new Error(datos.error || `Error HTTP ${respuesta.status}`);
-    return datos;
+    return window.AulaAdminFetch(raiz + path, opciones);
   }
-
   function aviso(texto, error = false) {
     const bloque = el('mensaje-cursos');
     bloque.textContent = texto;

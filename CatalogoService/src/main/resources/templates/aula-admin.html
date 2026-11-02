@@ -1,20 +1,33 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AulaBreve | Administracion DEMO</title><link rel="stylesheet" href="/css/aula-demo.css"><link rel="stylesheet" href="/css/aula-admin-cursos.css"><link rel="stylesheet" href="/css/aula-admin-contenido.css"></head>
-<body><header><div class="brand">Aula<span>Breve</span> <span class="muted">DEMO</span></div><nav><a href="/demo/aula/catalogo">Catalogo</a><a href="/demo/aula/mis-cursos">Mis cursos</a><a href="/demo/aula/admin">Panel administrador</a></nav></header>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AulaBreve | Administracion DEMO</title><meta name="_csrf" th:content="${_csrf.token}"><meta name="_csrf_header" th:content="${_csrf.headerName}"><link rel="stylesheet" href="/css/aula-demo.css"><link rel="stylesheet" href="/css/aula-admin-cursos.css"><link rel="stylesheet" href="/css/aula-admin-contenido.css"></head>
+<body><header><div class="brand">Aula<span>Breve</span> <span class="muted">DEMO</span></div><nav aria-label="Navegacion principal">
+  <a th:href="@{/demo/aula/catalogo}">Catalogo</a>
+  <a th:if="${navEstudiante}" th:href="@{/demo/aula/mis-cursos}">Mis cursos</a>
+  <a th:if="${navAdmin}" th:href="@{/demo/aula/admin}">Panel administrador</a>
+  <a th:if="${navAutenticado}" th:href="@{/cuenta}">Mi cuenta</a>
+  <a th:unless="${navAutenticado}" th:href="@{/ingresar}">Iniciar sesion</a>
+  <a th:unless="${navAutenticado}" th:href="@{/registro}">Registrarse</a>
+  <form th:if="${navAutenticado}" th:action="@{/salir}" method="post" style="margin:0">
+    <button type="submit" class="secondary" style="padding:0;background:transparent;color:#1556a5;font-size:14px;font-weight:650;">Cerrar sesion</button>
+  </form>
+</nav></header>
 <main><section class="panel hero"><h1>Panel administrativo</h1><p>Gestiona las compras simuladas y los cursos de AulaBreve. La administracion esta disponible solo en el entorno local DEMO.</p>
-<label for="clave">Clave DEMO del administrador</label>
-<div class="row"><input id="clave" type="password" autocomplete="off" placeholder="DEMO_API_KEY de .env"><button id="cargar">Ver compras</button></div>
-<p class="muted">No uses contrasenas reales. La clave no se guarda en el navegador; el panel es solo para demostracion local.</p></section>
+<div class="row" style="align-items:center;gap:12px;flex-wrap:wrap">
+<strong>Sesion autenticada: ROLE_ADMIN</strong>
+<button id="cargar" type="button">Actualizar compras</button>
+<form th:action="@{/salir}" method="post"><button type="submit" class="secondary">Cerrar sesion</button></form>
+</div>
+<p class="muted">Las operaciones administrativas usan tu sesion de Spring Security y un token CSRF. Ya no se introduce una clave compartida en la pagina.</p></section>
 <div class="admin-tabs" role="group" aria-label="Secciones del panel">
   <button type="button" id="tab-compras" aria-pressed="true">Compras</button>
   <button type="button" id="tab-cursos" class="secondary" aria-pressed="false">Cursos</button>
 </div>
 <section id="seccion-compras">
-  <div id="mensaje" class="notice" role="status">Ingresa la clave DEMO para consultar las compras.</div>
+  <div id="mensaje" class="notice" role="status">Compras disponibles para el administrador autenticado.</div>
   <section class="panel"><h2>Solicitudes y pagos</h2><div class="tablewrap" id="tabla"></div></section>
 </section>
 <section id="seccion-cursos" hidden>
-  <div id="mensaje-cursos" class="notice" role="status">Introduce la clave DEMO y selecciona Cursos.</div>
+  <div id="mensaje-cursos" class="notice" role="status">Selecciona la pestaña Cursos para administrar el catalogo.</div>
   <section class="panel">
     <div class="row between"><div><h2>Gestionar cursos</h2><p>Crea, edita y gestiona el contenido de los cursos; publica solo versiones completas.</p></div>
       <button id="nuevo-curso" type="button">+ Nuevo curso</button></div>
@@ -88,5 +101,5 @@
   </div>
 </section>
 </main>
-<footer>Modo DEMO. Antes de publicar la aplicacion es obligatorio implementar autenticacion y roles reales.</footer>
-<script src="/js/aula-admin.js" defer></script><script src="/js/aula-admin-cursos.js" defer></script><script src="/js/aula-admin-contenido.js" defer></script></body></html>
+<footer>Modo DEMO. Acceso administrativo por ROLE_ADMIN. Proteger la infraestructura antes de publicarla.</footer>
+<script src="/js/aula-admin.js" defer></script><script src="/js/aula-admin-cursos.js" defer></script><script src="/js/aula-admin-contenido.js" defer></script><script src="/js/aula-admin-videos.js" defer></script></body></html>

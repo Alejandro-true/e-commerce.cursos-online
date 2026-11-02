@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AulaBreve | Administracion DEMO</title><meta name="_csrf" th:content="${_csrf.token}"><meta name="_csrf_header" th:content="${_csrf.headerName}"><link rel="stylesheet" href="/css/aula-demo.css"><link rel="stylesheet" href="/css/aula-admin-cursos.css"><link rel="stylesheet" href="/css/aula-admin-contenido.css"></head>
+<body><header><div class="brand">Aula<span>Breve</span> <span class="muted">DEMO</span></div><nav><a href="/demo/aula/catalogo">Catalogo</a><a href="/demo/aula/mis-cursos">Mis cursos</a><a href="/demo/aula/admin">Panel administrador</a></nav></header>
+<main><section class="panel hero"><h1>Panel administrativo</h1><p>Gestiona las compras simuladas y los cursos de AulaBreve. La administracion esta disponible solo en el entorno local DEMO.</p>
+<div class="row" style="align-items:center;gap:12px;flex-wrap:wrap">
+<strong>Sesion autenticada: ROLE_ADMIN</strong>
+<button id="cargar" type="button">Actualizar compras</button>
+<form th:action="@{/salir}" method="post"><button type="submit" class="secondary">Cerrar sesion</button></form>
+</div>
+<p class="muted">Las operaciones administrativas usan tu sesion de Spring Security y un token CSRF. Ya no se introduce una clave compartida en la pagina.</p></section>
+<div class="admin-tabs" role="group" aria-label="Secciones del panel">
+  <button type="button" id="tab-compras" aria-pressed="true">Compras</button>
+  <button type="button" id="tab-cursos" class="secondary" aria-pressed="false">Cursos</button>
+</div>
+<section id="seccion-compras">
+  <div id="mensaje" class="notice" role="status">Compras disponibles para el administrador autenticado.</div>
+  <section class="panel"><h2>Solicitudes y pagos</h2><div class="tablewrap" id="tabla"></div></section>
+</section>
+<section id="seccion-cursos" hidden>
+  <div id="mensaje-cursos" class="notice" role="status">Selecciona la pestaña Cursos para administrar el catalogo.</div>
+  <section class="panel">
+    <div class="row between"><div><h2>Gestionar cursos</h2><p>Crea, edita y gestiona el contenido de los cursos; publica solo versiones completas.</p></div>
+      <button id="nuevo-curso" type="button">+ Nuevo curso</button></div>
+    <div id="tabla-cursos" class="tablewrap"></div>
+  </section>
+</section>
+<dialog id="modal-curso" aria-labelledby="titulo-modal-curso" class="modal-curso">
+  <form id="form-curso" class="form-curso">
+    <div class="row between"><h2 id="titulo-modal-curso">Nuevo curso</h2><button type="button" id="cerrar-curso" class="secondary">Cerrar</button></div>
+    <p class="muted">Se guardara como BORRADOR. No sera visible en el catalogo hasta que cumpla los requisitos de publicacion.</p>
+    <input id="curso-id" type="hidden">
+    <label for="curso-titulo">Titulo *</label><input id="curso-titulo" required maxlength="150" placeholder="Python desde cero">
+    <label for="curso-slug">Slug *</label><input id="curso-slug" required maxlength="180" pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="python-desde-cero">
+    <label for="curso-descripcion">Descripcion *</label><textarea id="curso-descripcion" rows="3" required placeholder="Lo que aprendera el estudiante"></textarea>
+    <div class="form-grid">
+      <div><label for="curso-categoria">Categoria *</label><select id="curso-categoria" required></select></div>
+      <div><label for="curso-nivel">Nivel *</label><select id="curso-nivel"><option value="BASICO">Basico</option><option value="INTERMEDIO">Intermedio</option><option value="AVANZADO">Avanzado</option></select></div>
+      <div><label for="curso-precio">Precio base *</label><input id="curso-precio" type="number" required min="0.01" max="99999999.99" step="0.01" placeholder="149.90"></div>
+      <div><label for="curso-moneda">Moneda *</label><select id="curso-moneda"><option value="PEN">PEN</option><option value="USD">USD</option></select></div>
+    </div>
+    <label for="curso-miniatura">URL de miniatura (opcional)</label><input id="curso-miniatura" maxlength="500" placeholder="https://...">
+    <div id="error-modal-curso" class="notice error" role="alert" hidden></div>
+    <div class="row" style="justify-content:flex-end;margin-top:18px"><button id="cancelar-curso" type="button" class="secondary">Cancelar</button><button id="guardar-curso" type="submit">Guardar borrador</button></div>
+  </form>
+</dialog>
+
+<section id="seccion-contenido" class="panel editor-contenido" hidden>
+  <div class="row between"><div><h2 id="contenido-titulo">Contenido del curso</h2><p id="contenido-estado" class="muted"></p></div><button type="button" class="secondary" id="volver-contenido">Volver a Cursos</button></div>
+  <div id="contenido-mensaje" class="notice" role="status">Selecciona un curso para gestionar versiones y lecciones.</div>
+  <div class="editor-grid">
+    <div>
+      <h3>Versiones y lecciones</h3>
+      <div id="arbol-contenido" class="arbol-contenido"></div>
+      <hr>
+      <label for="version-elegida">Version seleccionada</label>
+      <select id="version-elegida"></select>
+      <p class="muted">Las versiones PUBLICADAS son inmutables. Para actualizar el temario, crea otra version BORRADOR.</p>
+      <button type="button" id="publicar-version">Publicar version seleccionada</button>
+      <button type="button" class="secondary" id="archivar-curso">Archivar curso</button>
+    </div>
+    <div class="editor-formularios">
+      <h3>Anadir contenido</h3>
+      <form id="form-version" class="editor-form">
+        <h4>1. Nueva version</h4><label>Numero (ej. 1.0)</label><input name="numeroVersion" required maxlength="10" placeholder="1.0"><button type="submit">Crear version BORRADOR</button>
+      </form>
+      <form id="form-modulo" class="editor-form">
+        <h4>2. Anadir modulo</h4><label>Titulo</label><input name="titulo" required maxlength="150" placeholder="Introduccion">
+        <label>Descripcion</label><textarea name="descripcion" rows="2"></textarea><label>Orden en la version</label><input name="orden" type="number" min="1" value="1" required><button type="submit">Anadir modulo</button>
+      </form>
+      <form id="form-leccion" class="editor-form">
+        <h4>3. Anadir leccion</h4><label>Modulo</label><select id="leccion-modulo" required></select>
+        <label>Titulo</label><input name="titulo" maxlength="150" required placeholder="Primera leccion">
+        <label>Tipo</label><select name="tipo" id="leccion-tipo"><option value="VIDEO">VIDEO</option><option value="LECTURA">LECTURA</option></select>
+        <label>Orden</label><input name="orden" type="number" min="1" value="1" required>
+        <label>Descripcion</label><textarea name="descripcion" rows="2"></textarea>
+        <label>Texto de la leccion (lectura)</label><textarea name="contenidoTexto" rows="2"></textarea>
+        <label>Referencia privada de video (solo DEMO)</label><input name="videoReferencia" maxlength="255" placeholder="demo:python-introduccion">
+        <label>Estado del video</label><select name="estadoVideo" id="leccion-estado"><option value="PENDIENTE">PENDIENTE</option><option value="LISTO">LISTO (referencia DEMO verificada manualmente)</option></select>
+        <label>Duracion (segundos, opcional)</label><input name="duracionSegundos" type="number" min="0" placeholder="120">
+        <label class="check-inline"><input name="obligatorio" type="checkbox" checked> Leccion obligatoria</label>
+        <button type="submit">Anadir leccion</button>
+      </form>
+      <form id="form-recurso" class="editor-form">
+        <h4>4. Recurso opcional</h4><label>Leccion</label><select id="recurso-leccion" required></select>
+        <label>Nombre</label><input name="nombre" maxlength="100" required placeholder="Material de apoyo">
+        <label>Referencia de archivo</label><input name="archivoReferencia" maxlength="500" required placeholder="demo:guia-python.pdf">
+        <label>Tipo</label><select name="tipoArchivo"><option>PDF</option><option>ZIP</option><option>DOCX</option></select>
+        <button type="submit">Anadir recurso</button>
+      </form>
+    </div>
+  </div>
+</section>
+</main>
+<footer>Modo DEMO. Acceso administrativo por ROLE_ADMIN. Proteger la infraestructura antes de publicarla.</footer>
+<script src="/js/aula-admin.js" defer></script><script src="/js/aula-admin-cursos.js" defer></script><script src="/js/aula-admin-contenido.js" defer></script></body></html>

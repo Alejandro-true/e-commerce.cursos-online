@@ -8,11 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
-/**
- * Amplia la cadena de cuentas de la etapa 11.2, sin reemplazarla.
- * Catálogo publico; compra/consultas asociadas EXCLUSIVAMENTE a la sesión.
- * Se mantienen CSRF y sesiones HTTP del mismo origen.
- */
+/** Catálogo público; compra, cursos y videos sujetos a la identidad de la sesion. */
 @Configuration
 @Profile("demo")
 public class SeguridadPortalDemoConfig {
@@ -22,21 +18,19 @@ public class SeguridadPortalDemoConfig {
     public SecurityFilterChain portalConSesion(HttpSecurity http) throws Exception {
         http.securityMatcher(
                     "/demo/aula", "/demo/aula/catalogo", "/demo/aula/mis-cursos",
-                    "/api/demo/cuenta/**")
+                    "/api/demo/cuenta/**", "/api/demo/video/**")
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/demo/aula/catalogo").permitAll()
-                .requestMatchers("/demo/aula/mis-cursos", "/api/demo/cuenta/**")
-                    .hasRole("ESTUDIANTE")
+                .requestMatchers("/demo/aula/mis-cursos", "/api/demo/cuenta/**",
+                                 "/api/demo/video/**").hasRole("ESTUDIANTE")
                 .anyRequest().denyAll())
             .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, error) -> {
                 if (request.getRequestURI().startsWith("/api/")) {
-                    response.sendError(HttpStatus.UNAUTHORIZED.value(),
-                            "Inicia sesion para realizar esta operacion");
+                    response.sendError(HttpStatus.UNAUTHORIZED.value(), "Debes iniciar sesion");
                 } else {
                     response.sendRedirect(request.getContextPath() + "/ingresar");
                 }
             }));
-        // CSRF sigue ACTIVADO por defecto para POST /api/demo/cuenta/compras.
         return http.build();
     }
 
