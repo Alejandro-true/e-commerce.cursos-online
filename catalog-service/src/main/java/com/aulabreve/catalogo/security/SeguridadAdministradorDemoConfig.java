@@ -9,8 +9,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Etapa 11.4: solo usuarios con ROLE_ADMIN pueden abrir o llamar la
- * administracion. Rutas legacy de checkout tambien quedan restringidas;
+ * Solo usuarios con ROLE_ADMIN pueden llamar la API de administracion.
+ * Rutas legacy de checkout tambien quedan restringidas;
  * la clave anterior no sirve para entrar sin iniciar sesion como ADMIN.
  * CSRF permanece habilitado en las operaciones de escritura.
  */
@@ -22,21 +22,15 @@ public class SeguridadAdministradorDemoConfig {
     @Order(0)
     public SecurityFilterChain cadenaAdministrador(HttpSecurity http) throws Exception {
         http.securityMatcher(
-                "/demo/aula/admin",
                 "/api/demo/panel/**",
                 "/api/demo/admin/**",
-                "/api/demo/compras/**",
-                "/demo/checkout/**")
+                "/api/demo/compras/**")
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().hasRole("ADMIN"))
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, error) -> {
-                    if (request.getRequestURI().startsWith("/api/")) {
-                        response.sendError(HttpStatus.UNAUTHORIZED.value(),
-                                "Inicia sesion como administrador");
-                    } else {
-                        response.sendRedirect(request.getContextPath() + "/ingresar");
-                    }
+                    response.sendError(HttpStatus.UNAUTHORIZED.value(),
+                            "Inicia sesion como administrador");
                 })
                 .accessDeniedHandler((request, response, error) -> {
                     response.sendError(HttpStatus.FORBIDDEN.value(),

@@ -1,20 +1,5 @@
 {
-  "/ingresar": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true
-  },
-  "/registro": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true
-  },
-  "/cuenta": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true
-  },
-  "/salir": {
+  "/api/demo/auth": {
     "target": "http://localhost:8080",
     "secure": false,
     "changeOrigin": true

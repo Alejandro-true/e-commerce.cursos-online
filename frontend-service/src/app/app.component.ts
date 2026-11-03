@@ -14,6 +14,7 @@ import {
 } from './core/api.service';
 
 type Section = 'catalog' | 'progress' | 'community';
+type Page = 'portal' | 'login' | 'register' | 'account';
 
 @Component({
   imports: [CommonModule, FormsModule],
@@ -23,6 +24,15 @@ type Section = 'catalog' | 'progress' | 'community';
 })
 export class App implements OnInit {
   private readonly api = inject(ApiService);
+
+  readonly page = signal<Page>('portal');
+  loginEmail = '';
+  loginPassword = '';
+  registerName = '';
+  registerEmail = '';
+  registerPassword = '';
+  registerConfirmation = '';
+  authBusy = signal(false);
 
   readonly courses = signal<CourseSummary[]>([]);
   readonly selectedCourse = signal<CourseDetail | null>(null);
@@ -43,8 +53,63 @@ export class App implements OnInit {
   reviewComment = '';
 
   ngOnInit(): void {
+    this.page.set(this.pageFromPath(window.location.pathname));
+    window.addEventListener('popstate', () => this.page.set(this.pageFromPath(window.location.pathname)));
     this.refreshCourses();
     this.refreshIdentity();
+  }
+
+  private pageFromPath(path: string): Page {
+    if (path === '/ingresar') return 'login';
+    if (path === '/registro') return 'register';
+    if (path === '/cuenta') return 'account';
+    return 'portal';
+  }
+
+  navigate(path: string): void {
+    window.history.pushState({}, '', path);
+    this.page.set(this.pageFromPath(path));
+    this.error.set('');
+    this.notice.set('');
+    if (path === '/') this.refreshIdentity();
+  }
+
+  submitLogin(): void {
+    this.authBusy.set(true);
+    this.error.set('');
+    this.api.login(this.loginEmail, this.loginPassword).subscribe({
+      next: () => { this.authBusy.set(false); this.loginPassword = ''; this.navigate('/'); },
+      error: (error: HttpErrorResponse) => {
+        this.authBusy.set(false);
+        this.error.set(error.status === 401 ? 'Correo o contraseña incorrectos.' : this.describeError(error, 'No se pudo iniciar sesión.'));
+      },
+    });
+  }
+
+  submitRegistration(): void {
+    this.authBusy.set(true);
+    this.error.set('');
+    this.api.register(this.registerName, this.registerEmail, this.registerPassword, this.registerConfirmation).subscribe({
+      next: () => {
+        this.authBusy.set(false);
+        this.registerPassword = '';
+        this.registerConfirmation = '';
+        this.notice.set('Cuenta creada. Inicia sesión para continuar.');
+        this.navigate('/ingresar');
+        this.notice.set('Cuenta creada. Inicia sesión para continuar.');
+      },
+      error: (error: HttpErrorResponse) => {
+        this.authBusy.set(false);
+        this.error.set(this.describeError(error, 'No se pudo crear la cuenta.'));
+      },
+    });
+  }
+
+  logout(): void {
+    this.api.logout().subscribe({
+      next: () => { this.currentStudent.set(null); this.studentId.set(''); this.navigate('/'); },
+      error: (error: HttpErrorResponse) => this.error.set(this.describeError(error, 'No se pudo cerrar la sesión.')),
+    });
   }
 
   refreshCourses(): void {
@@ -70,7 +135,7 @@ export class App implements OnInit {
     if (section === 'progress' && this.selectedCourse()) this.refreshProgress();
   }
 
-  openCourse(summary: CourseSummary): void {
+  openCourse(summary: CourseSummary, destination: Section = 'progress'): void {
     this.loading.set(true);
     this.error.set('');
     this.notice.set('');
@@ -81,8 +146,8 @@ export class App implements OnInit {
         this.reviews.set([]);
         this.activeVideoUrl.set('');
         this.loading.set(false);
-        this.section.set('progress');
-        this.refreshProgress();
+        this.section.set(destination);
+        if (destination === 'progress') this.refreshProgress();
         this.refreshReviews();
         this.refreshAchievements();
       },

@@ -3,7 +3,6 @@ package com.aulabreve.catalogo.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,35 +16,34 @@ public class SeguridadCuentaConfig {
         return new BCryptPasswordEncoder(12);
     }
 
-    /**
-     * Etapa 11.2: protege SOLO el modulo de cuentas, SIN modificar aun las
-     * rutas historicas del simulador DEMO. En 11.3 se debe integrar la
-     * autenticacion con el checkout y cubrir el resto de endpoints web.
-     */
+    /** Autenticación de sesión expuesta como API para el frontend Angular. */
     @Bean
     @Order(1)
-    public SecurityFilterChain cadenaCuentas(
-            HttpSecurity http,
-            @Value("${app.frontend.base-url:http://localhost:4200}") String frontendBaseUrl)
-            throws Exception {
-        http.securityMatcher("/registro", "/ingresar", "/cuenta", "/cuenta/**", "/salir")
+    public SecurityFilterChain cadenaCuentas(HttpSecurity http) throws Exception {
+        http.securityMatcher("/api/demo/auth/**")
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/registro", "/ingresar").permitAll()
-                .anyRequest().authenticated()
+                .requestMatchers("/api/demo/auth/csrf", "/api/demo/auth/registro",
+                        "/api/demo/auth/login", "/api/demo/auth/logout").permitAll()
+                .anyRequest().denyAll()
             )
             .formLogin(form -> form
-                .loginPage("/ingresar")
-                .loginProcessingUrl("/ingresar")
-                .defaultSuccessUrl(frontendBaseUrl, true)
-                .failureUrl("/ingresar?error")
+                .loginProcessingUrl("/api/demo/auth/login")
+                .successHandler((request, response, authentication) ->
+                        response.setStatus(org.springframework.http.HttpStatus.NO_CONTENT.value()))
+                .failureHandler((request, response, exception) -> {
+                    response.setStatus(org.springframework.http.HttpStatus.UNAUTHORIZED.value());
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"message\":\"Correo o contraseña incorrectos\"}");
+                })
                 .permitAll()
             )
             .logout(logout -> logout
-                .logoutUrl("/salir")
-                .logoutSuccessUrl("/ingresar?salir")
+                .logoutUrl("/api/demo/auth/logout")
+                .logoutSuccessHandler((request, response, authentication) ->
+                        response.setStatus(org.springframework.http.HttpStatus.NO_CONTENT.value()))
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
-            ); // Proteccion CSRF ACTIVA para todos estos formularios.
+            ); // CSRF sigue habilitado para registro, login y logout.
         return http.build();
     }
 }

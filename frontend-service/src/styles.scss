@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
-
 :root {
   color-scheme: light;
   --ink: #1d2826;
@@ -82,6 +80,14 @@ h1, h2, h3 { font-family: Manrope, 'DM Sans', sans-serif; }
 .section-heading h2 { margin: 0; font-size: 27px; letter-spacing: -1px; }
 .muted { color: var(--muted); font-size: 11px; }
 .course-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.selection-hint { margin: -12px 0 18px; }
+.selection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.selection-card { display: grid; gap: 9px; padding: 20px; text-align: left; border: 1px solid var(--line); border-radius: 13px; background: white; color: var(--ink); transition: .2s; }
+.selection-card:hover { transform: translateY(-2px); border-color: #b9cfbd; box-shadow: 0 10px 24px #1937290c; }
+.selection-card strong { font: 700 15px Manrope, sans-serif; }
+.selection-card span { color: var(--muted); font-size: 11px; }
+.selection-card small { margin-top: 4px; color: var(--green); font-size: 10px; font-weight: 700; }
+.empty-state .text-button { display: inline-block; margin-top: 16px; }
 .course-card { background: white; border: 1px solid var(--line); border-radius: 15px; overflow: hidden; transition: .22s; }
 .course-card:hover { transform: translateY(-4px); box-shadow: 0 14px 32px #1937290c; }
 .course-art { height: 158px; position: relative; display: grid; place-items: center; overflow: hidden; }

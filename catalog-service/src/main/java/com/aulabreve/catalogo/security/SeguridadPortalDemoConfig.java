@@ -16,20 +16,11 @@ public class SeguridadPortalDemoConfig {
     @Bean
     @Order(2)
     public SecurityFilterChain portalConSesion(HttpSecurity http) throws Exception {
-        http.securityMatcher(
-                    "/demo/aula", "/demo/aula/catalogo", "/demo/aula/mis-cursos",
-                    "/api/demo/cuenta/**", "/api/demo/video/**")
+        http.securityMatcher("/api/demo/cuenta/**", "/api/demo/video/**")
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/demo/aula/catalogo").permitAll()
-                .requestMatchers("/demo/aula/mis-cursos", "/api/demo/cuenta/**",
-                                 "/api/demo/video/**").hasRole("ESTUDIANTE")
-                .anyRequest().denyAll())
+                .anyRequest().hasRole("ESTUDIANTE"))
             .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, error) -> {
-                if (request.getRequestURI().startsWith("/api/")) {
-                    response.sendError(HttpStatus.UNAUTHORIZED.value(), "Debes iniciar sesion");
-                } else {
-                    response.sendRedirect(request.getContextPath() + "/ingresar");
-                }
+                response.sendError(HttpStatus.UNAUTHORIZED.value(), "Debes iniciar sesion");
             }));
         return http.build();
     }

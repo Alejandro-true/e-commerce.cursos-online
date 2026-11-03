@@ -3,9 +3,11 @@
 Microservicio desarrollado con Python, FastAPI, PostgreSQL,
 SQLAlchemy y Alembic.
 
-## Estado
+## Responsabilidad
 
-Lógica interna implementada y validada mediante 21 pruebas:
+Community Service es únicamente un backend HTTP. No incluye ni sirve archivos de interfaz; la interfaz única del sistema está en `frontend-service` (Angular).
+
+Incluye:
 
 - Creación y consulta de reseñas.
 - Moderación con registro de administrador, motivo y fecha.
@@ -13,13 +15,7 @@ Lógica interna implementada y validada mediante 21 pruebas:
 - Prevención de recompensas duplicadas por estudiante y módulo.
 - Consulta de insignias y puntos del estudiante.
 
-Las pruebas utilizan SQLite en memoria y simulaciones de las
-dependencias externas.
-
-Están pendientes las integraciones reales de autenticación,
-Catálogo y recepción de eventos de Progreso. Actualmente, las
-rutas que requieren identidad responden 503 mientras la
-autenticación está pendiente.
+Community consulta el acceso del estudiante en Catalog mediante `X-Service-Key`. También consume el evento `ModuloCompletado` desde RabbitMQ y registra puntos e insignias de forma idempotente.
 
 ## Requisitos
 
@@ -86,7 +82,7 @@ Resultado de referencia: `21 passed`.
 |---|---|---|
 | GET | `/health` | Estado de la API |
 | GET | `/health/db` | Comprobar conexión a PostgreSQL |
-| GET | `/resenas?curso_id=1` | Consultar reseñas visibles |
+| GET | `/resenas?curso_id=<uuid>` | Consultar reseñas visibles |
 | POST | `/resenas` | Crear una reseña |
 | PATCH | `/resenas/{resena_id}/ocultar` | Ocultar y registrar moderación |
 | GET | `/logros/me` | Consultar logros del estudiante autenticado |
@@ -109,17 +105,10 @@ administrador.
 | `migrations` | Migraciones de Alembic |
 | `tests` | Pruebas automatizadas |
 
-## Integraciones pendientes
+## Comunicación entre servicios
 
-- Autenticación: implementar `get_current_student_id` y
-  `get_current_admin_id` con identidad verificada y validación
-  del rol administrador.
-- Catálogo: conectar `CatalogClient.has_active_access` con el
-  contrato real de consulta de acceso vigente.
-- Progreso: conectar la recepción de `ModuloCompletado` y
-  adaptar sus datos a `ModuleCompletedData`.
+- **Catalog:** valida el acceso antes de publicar una reseña mediante `GET /api/internal/progreso/cursos/{cursoId}/acceso/{estudianteId}`.
+- **Progress:** publica `ModuloCompletado` en RabbitMQ; Community lo consume desde la cola `community.modulo-completado`.
+- **Frontend:** Angular consume esta API en `http://localhost:8000`; Community no tiene rutas `/panel` ni recursos estáticos.
 
-El procesamiento interno de recompensas está implementado en
-`app/services/reward_service.py`. Su integración con el
-transporte de eventos se realizará al definir el contrato con
-Progreso.
+En `AUTH_MODE=development`, las rutas protegidas aceptan `X-Student-Id` y `X-Admin-Id` para desarrollo local. No uses este modo en producción; allí se debe conectar el proveedor de identidad del sistema.

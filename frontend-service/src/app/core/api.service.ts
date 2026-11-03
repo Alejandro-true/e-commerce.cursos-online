@@ -88,12 +88,39 @@ export interface PurchaseRequest {
   estado: string;
 }
 
+export interface CsrfResponse { nombreHeader: string; token: string; }
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly catalogBase = '/api/catalogo';
   private readonly progressBase = '/api/progreso';
   private readonly communityBase = '/api/comunidad';
+
+  getAuthCsrf(): Observable<CsrfResponse> {
+    return this.http.get<CsrfResponse>('/api/demo/auth/csrf');
+  }
+
+  register(name: string, email: string, password: string, confirmation: string): Observable<unknown> {
+    return this.getAuthCsrf().pipe(switchMap((csrf) => this.http.post(
+      '/api/demo/auth/registro', { nombre: name, email, password, confirmacion: confirmation },
+      { headers: { [csrf.nombreHeader]: csrf.token } },
+    )));
+  }
+
+  login(email: string, password: string): Observable<string> {
+    return this.getAuthCsrf().pipe(switchMap((csrf) => this.http.post(
+      '/api/demo/auth/login', new HttpParams().set('username', email).set('password', password).toString(),
+      { headers: { [csrf.nombreHeader]: csrf.token, 'Content-Type': 'application/x-www-form-urlencoded' }, responseType: 'text' },
+    )));
+  }
+
+  logout(): Observable<string> {
+    return this.getAuthCsrf().pipe(switchMap((csrf) => this.http.post(
+      '/api/demo/auth/logout', '',
+      { headers: { [csrf.nombreHeader]: csrf.token }, responseType: 'text' },
+    )));
+  }
 
   getCurrentStudent(): Observable<CurrentStudent> {
     return this.http.get<CurrentStudent>('/api/cuenta/yo');

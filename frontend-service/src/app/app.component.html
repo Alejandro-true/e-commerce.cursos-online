@@ -1,3 +1,36 @@
+@if (page() === 'login' || page() === 'register' || page() === 'account') {
+  <main class="auth-page">
+    <a class="back-link" href="/" (click)="$event.preventDefault(); navigate('/')">← Volver a AulaBreve</a>
+    @if (error()) { <div class="alert error" role="alert">{{ error() }}</div> }
+    @if (notice()) { <div class="alert success" role="status">{{ notice() }}</div> }
+    @if (page() === 'login') {
+      <section class="auth-card"><p class="eyebrow">QUÉ BUENO TENERTE DE VUELTA</p><h1>Iniciar sesión</h1>
+        <form (ngSubmit)="submitLogin()">
+          <label>Correo electrónico<input name="email" type="email" [(ngModel)]="loginEmail" required autocomplete="email" /></label>
+          <label>Contraseña<input name="password" type="password" [(ngModel)]="loginPassword" required autocomplete="current-password" /></label>
+          <button class="primary-button" type="submit" [disabled]="authBusy()">{{ authBusy() ? 'Ingresando…' : 'Iniciar sesión' }}</button>
+        </form><p>¿Aún no tienes cuenta? <a href="/registro">Crear cuenta</a></p>
+      </section>
+    }
+    @if (page() === 'register') {
+      <section class="auth-card"><p class="eyebrow">EMPIEZA A APRENDER</p><h1>Crear cuenta</h1>
+        <form (ngSubmit)="submitRegistration()">
+          <label>Nombre<input name="name" [(ngModel)]="registerName" required autocomplete="name" /></label>
+          <label>Correo electrónico<input name="email" type="email" [(ngModel)]="registerEmail" required autocomplete="email" /></label>
+          <label>Contraseña<input name="password" type="password" [(ngModel)]="registerPassword" required minlength="8" autocomplete="new-password" /></label>
+          <label>Confirmar contraseña<input name="confirmation" type="password" [(ngModel)]="registerConfirmation" required minlength="8" autocomplete="new-password" /></label>
+          <button class="primary-button" type="submit" [disabled]="authBusy()">{{ authBusy() ? 'Creando cuenta…' : 'Crear cuenta' }}</button>
+        </form><p>¿Ya tienes cuenta? <a href="/ingresar">Iniciar sesión</a></p>
+      </section>
+    }
+    @if (page() === 'account') {
+      <section class="auth-card"><p class="eyebrow">TU ESPACIO PERSONAL</p><h1>Mi cuenta</h1>
+        @if (currentStudent(); as student) { <p><strong>{{ student.nombre }}</strong><br />{{ student.email }}</p><button class="secondary-button" (click)="logout()">Cerrar sesión</button> }
+        @else { <p>Inicia sesión para ver tu cuenta.</p><a class="primary-button" href="/ingresar">Iniciar sesión</a> }
+      </section>
+    }
+  </main>
+} @else {
 <header class="topbar">
   <a class="brand" href="#inicio" (click)="$event.preventDefault(); backToCatalog()">
     <span class="brand-mark">a</span>
@@ -6,18 +39,19 @@
 
   <nav class="main-nav" aria-label="Navegación principal">
     <button [class.active]="section() === 'catalog'" (click)="backToCatalog()">Explorar</button>
-    <button [class.active]="section() === 'progress'" [disabled]="!selectedCourse()" (click)="selectSection('progress')">Mi aprendizaje</button>
-    <button [class.active]="section() === 'community'" [disabled]="!selectedCourse()" (click)="selectSection('community')">Comunidad</button>
+    <button [class.active]="section() === 'progress'" (click)="selectSection('progress')">Mi aprendizaje</button>
+    <button [class.active]="section() === 'community'" (click)="selectSection('community')">Comunidad</button>
   </nav>
 
   @if (currentStudent(); as student) {
-    <div class="account-chip"><span>Conectada como</span><strong>{{ student.nombre }}</strong><a href="/cuenta">Mi cuenta</a></div>
+    <div class="account-chip"><span>Conectada como </span><strong>{{ student.nombre }}</strong> <a href="/cuenta"> Mi cuenta</a></div>
   } @else {
-    <div class="account-links"><a href="/ingresar">Iniciar sesión</a><a href="/registro">Crear cuenta</a></div>
+    <div class="account-links"><a href="/ingresar">Iniciar sesión </a><a href="/registro"> Crear cuenta</a></div>
   }
 </header>
 
 <main>
+  @if (section() === 'catalog') {
   <section class="hero" id="inicio">
     <div class="hero-copy">
       <p class="eyebrow">PEQUEÑAS LECCIONES, GRANDES AVANCES</p>
@@ -41,6 +75,7 @@
     <article><span class="stat-icon peach">♧</span><div><strong>{{ achievements()?.insignias?.length ?? 0 }}</strong><small>módulos celebrados</small></div></article>
     <button class="refresh-button" aria-label="Actualizar información" (click)="refreshCourses(); refreshAchievements()">↻</button>
   </section>
+  }
 
   @if (error()) { <div class="alert error" role="alert">{{ error() }}</div> }
   @if (notice()) { <div class="alert success" role="status">{{ notice() }}</div> }
@@ -71,6 +106,24 @@
                 <button class="text-button" (click)="openCourse(course)">Ver curso <span>→</span></button>
               </div>
             </article>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  @if (section() === 'progress' && !selectedCourse()) {
+    <section class="content-section">
+      <div class="section-heading"><div><p class="eyebrow">TU ESPACIO DE ESTUDIO</p><h2>Mi aprendizaje</h2></div><button class="secondary-button" (click)="backToCatalog()">Explorar catálogo</button></div>
+      @if (!studentId()) {
+        <div class="empty-state"><span>↗</span><h3>Inicia sesión para consultar tu avance</h3><p>Después podrás elegir un curso y revisar tus lecciones completadas.</p><a class="text-button" href="/ingresar">Iniciar sesión →</a></div>
+      } @else if (courses().length === 0) {
+        <div class="empty-state"><span>✦</span><h3>No hay cursos para mostrar</h3><p>Cuando haya cursos publicados, podrás abrirlos aquí y consultar tu avance.</p></div>
+      } @else {
+        <p class="muted selection-hint">Elige un curso para consultar tu progreso. Necesitas tener acceso confirmado.</p>
+        <div class="selection-grid">
+          @for (course of courses(); track course.id) {
+            <button class="selection-card" (click)="openCourse(course, 'progress')"><strong>{{ course.titulo }}</strong><span>{{ course.nivel }} · {{ course.categoria?.nombre ?? 'Micro-aprendizaje' }}</span><small>Consultar avance →</small></button>
           }
         </div>
       }
@@ -137,6 +190,21 @@
     </section>
   }
 
+  @if (section() === 'community' && !selectedCourse()) {
+    <section class="content-section">
+      <div class="section-heading"><div><p class="eyebrow">APRENDEMOS MEJOR EN COMUNIDAD</p><h2>Comunidad</h2><p class="course-description">Elige un curso para leer sus reseñas y consultar tus logros.</p></div></div>
+      @if (courses().length === 0) {
+        <div class="empty-state"><span>✦</span><h3>Aún no hay cursos publicados</h3><p>Las reseñas aparecerán aquí cuando haya cursos disponibles.</p></div>
+      } @else {
+        <div class="selection-grid">
+          @for (course of courses(); track course.id) {
+            <button class="selection-card" (click)="openCourse(course, 'community')"><strong>{{ course.titulo }}</strong><span>{{ course.categoria?.nombre ?? 'Micro-aprendizaje' }}</span><small>Ver reseñas y logros →</small></button>
+          }
+        </div>
+      }
+    </section>
+  }
+
   @if (section() === 'community' && selectedCourse(); as course) {
     <section class="content-section community-section">
       <div class="section-heading">
@@ -186,3 +254,4 @@
 </main>
 
 <footer><span class="brand-mark small-mark">a</span><span>AulaBreve</span><small>Un poco cada día también es progreso.</small></footer>
+}
