@@ -58,13 +58,10 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-<<<<<<< HEAD
-=======
     		<groupId>org.springframework.boot</groupId>
     		<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 		<dependency>
->>>>>>> origin/feature/catalogo
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
@@ -99,8 +96,6 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-<<<<<<< HEAD
-=======
 		<!-- Migraciones de la base de datos -->
 		<dependency>
     		<groupId>org.springframework.boot</groupId>
@@ -117,7 +112,6 @@
        		<artifactId>jackson-databind</artifactId>
    		</dependency>
 
->>>>>>> origin/feature/catalogo
 	</dependencies>
 
 	<build>
