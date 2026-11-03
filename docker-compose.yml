@@ -81,6 +81,8 @@ services:
       DEMO_API_KEY: ${DEMO_API_KEY:-local-development-demo-key-change-this-32chars}
       DEMO_WEBHOOK_SECRET: ${DEMO_WEBHOOK_SECRET:-local-development-webhook-key-change-this-32chars}
       DEMO_VIDEO_SECRET: ${DEMO_VIDEO_SECRET:-local-development-video-secret-change-this-32chars}
+      DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:-admin@aulabreve.local}
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-AdminDemo-2026!}
       VIDEO_STORAGE_DIR: /var/lib/aulabreve/videos
       CORS_ALLOWED_ORIGINS: http://localhost:4200,http://127.0.0.1:4200
       FRONTEND_BASE_URL: http://localhost:4200

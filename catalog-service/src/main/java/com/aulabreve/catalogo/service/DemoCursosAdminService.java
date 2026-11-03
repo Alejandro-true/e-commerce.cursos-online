@@ -94,6 +94,27 @@ public class DemoCursosAdminService {
         return new CursoCreado(id, "BORRADOR");
     }
 
+    @Transactional
+    public void eliminarBorrador(UUID id) {
+        if (id == null) throw new IllegalArgumentException("Curso no especificado");
+        var cursosEncontrados = jdbc.query(
+                "SELECT estado FROM cursos WHERE id = ?",
+                (rs, i) -> rs.getString("estado"), id);
+        if (cursosEncontrados.isEmpty()) throw new IllegalArgumentException("Curso no encontrado");
+        if (!"BORRADOR".equals(cursosEncontrados.get(0))) {
+            throw new IllegalArgumentException("Solo se pueden eliminar cursos en borrador; retira del catálogo los cursos publicados");
+        }
+        Boolean tieneVersiones = jdbc.queryForObject(
+                "SELECT EXISTS (SELECT 1 FROM curso_versiones WHERE curso_id = ?)", Boolean.class, id);
+        Boolean tieneCompras = jdbc.queryForObject(
+                "SELECT EXISTS (SELECT 1 FROM compras WHERE curso_id = ?)", Boolean.class, id);
+        if (Boolean.TRUE.equals(tieneVersiones) || Boolean.TRUE.equals(tieneCompras)) {
+            throw new IllegalArgumentException("Este curso ya tiene contenido o historial; retíralo del catálogo para conservar sus datos");
+        }
+        jdbc.update("DELETE FROM precios_promociones WHERE curso_id = ?", id);
+        jdbc.update("DELETE FROM cursos WHERE id = ? AND estado = 'BORRADOR'", id);
+    }
+
     private static ConfigurarPrecioRequest precio(CursoFormulario f) {
         return new ConfigurarPrecioRequest(f.precioBase(), null, f.moneda(), null, null);
     }

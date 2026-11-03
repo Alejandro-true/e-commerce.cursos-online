@@ -29,7 +29,7 @@
         @else { <p>Inicia sesión para ver tu cuenta.</p><a class="primary-button" href="/ingresar">Iniciar sesión</a> }
       </section>
     }
-  </main>
+</main>
 } @else {
 <header class="topbar">
   <a class="brand" href="#inicio" (click)="$event.preventDefault(); backToCatalog()">
@@ -41,6 +41,7 @@
     <button [class.active]="section() === 'catalog'" (click)="backToCatalog()">Explorar</button>
     <button [class.active]="section() === 'progress'" (click)="selectSection('progress')">Mi aprendizaje</button>
     <button [class.active]="section() === 'community'" (click)="selectSection('community')">Comunidad</button>
+    @if (currentStudent()?.rol === 'ADMIN') { <button [class.active]="section() === 'admin'" (click)="selectSection('admin')">Administración</button> }
   </nav>
 
   @if (currentStudent(); as student) {
@@ -251,6 +252,47 @@
       </div>
     </section>
   }
+  @if (section() === 'admin' && currentStudent()?.rol === 'ADMIN') {
+    <section class="content-section admin-section">
+      <div class="section-heading admin-section-heading"><div><p class="eyebrow">ESPACIO DE GESTIÓN</p><h2>Administración</h2><p class="course-description">Gestiona los cursos y revisa las solicitudes de compra.</p></div><button class="secondary-button" (click)="loadAdminPanel()">↻ Actualizar</button></div>
+      <div class="admin-stat-grid">
+        <article class="admin-stat-card"><span class="admin-stat-icon violet">▤</span><div><small>Total de cursos</small><strong>{{ adminCourses().length }}</strong><span>en el catálogo</span></div></article>
+        <article class="admin-stat-card"><span class="admin-stat-icon green">✓</span><div><small>Publicados</small><strong>{{ countCoursesByState('PUBLICADO') }}</strong><span>visibles al estudiante</span></div></article>
+        <article class="admin-stat-card"><span class="admin-stat-icon amber">✎</span><div><small>Borradores</small><strong>{{ countCoursesByState('BORRADOR') }}</strong><span>pendientes de publicación</span></div></article>
+        <article class="admin-stat-card"><span class="admin-stat-icon blue">↗</span><div><small>Compras por revisar</small><strong>{{ pendingPurchasesCount() }}</strong><span>solicitudes pendientes</span></div></article>
+      </div>
+      <div class="admin-tabs"><button [class.active]="adminTab() === 'courses'" (click)="adminTab.set('courses')">Cursos <span>{{ adminCourses().length }}</span></button><button [class.active]="adminTab() === 'purchases'" (click)="adminTab.set('purchases')">Compras <span>{{ pendingPurchasesCount() }}</span></button></div>
+      @if (adminTab() === 'courses') {
+        <div class="admin-grid">
+          <section class="panel admin-form-panel"><p class="eyebrow">{{ editingAdminCourseId() ? 'EDITAR BORRADOR' : 'NUEVO CONTENIDO' }}</p><h3>{{ editingAdminCourseId() ? 'Editar curso' : 'Crear curso' }}</h3>
+            <form class="admin-form" (ngSubmit)="saveAdminCourse()">
+              <label>Categoría<select name="categoria" [(ngModel)]="adminCourseForm.categoriaId" required><option value="" disabled>Selecciona una categoría</option>@for (category of adminCategories(); track category.id) { <option [value]="category.id">{{ category.nombre }}</option> }</select></label>
+              <label>Título<input name="titulo" [(ngModel)]="adminCourseForm.titulo" required maxlength="150" /></label>
+              <label>Slug<input name="slug" [(ngModel)]="adminCourseForm.slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="mi-curso" /></label>
+              <label>Descripción<textarea name="descripcion" [(ngModel)]="adminCourseForm.descripcion" rows="3" required></textarea></label>
+              <div class="admin-form-row"><label>Nivel<select name="nivel" [(ngModel)]="adminCourseForm.nivel"><option value="BASICO">Básico</option><option value="INTERMEDIO">Intermedio</option><option value="AVANZADO">Avanzado</option></select></label><label>Precio<input name="precio" type="number" min="0.01" step="0.01" [(ngModel)]="adminCourseForm.precioBase" required /></label><label>Moneda<select name="moneda" [(ngModel)]="adminCourseForm.moneda"><option value="PEN">PEN</option><option value="USD">USD</option></select></label></div>
+              <label>URL de miniatura <span class="muted">(opcional)</span><input name="miniatura" type="url" [(ngModel)]="adminCourseForm.miniaturaUrl" /></label>
+              <div class="admin-form-actions"><button class="primary-button" type="submit" [disabled]="adminBusy() || adminCategories().length === 0">{{ adminBusy() ? 'Guardando…' : (editingAdminCourseId() ? 'Guardar cambios' : 'Crear borrador') }}</button>@if (editingAdminCourseId()) { <button class="secondary-button" type="button" (click)="cancelAdminCourseEdit()">Cancelar</button> }</div>
+            </form>
+          </section>
+          <section class="panel admin-list-panel"><div class="panel-heading"><div><p class="eyebrow">CATÁLOGO</p><h3>Cursos registrados</h3></div></div>
+            @if (adminLoading()) { <div class="loading-line">Cargando cursos…</div> }
+            @for (course of adminCourses(); track course.id) {
+              <article class="admin-course-row"><div class="admin-course-info"><span class="admin-status" [class]="'admin-status state-' + course.estado.toLowerCase()">{{ course.estado }}</span><h3>{{ course.titulo }}</h3><p>{{ course.categoria }} · {{ course.nivel }} · {{ course.precioBase ?? 0 }} {{ course.moneda ?? 'PEN' }}</p><small>{{ course.slug }}</small></div><div class="admin-course-actions">@if (course.estado === 'BORRADOR') { <button class="admin-action-edit" (click)="editAdminCourse(course)">Editar</button><button class="admin-action-delete" [disabled]="adminBusy()" (click)="deleteAdminCourse(course)">Eliminar</button> } @else if (course.estado === 'PUBLICADO') { <button class="admin-action-delete" [disabled]="adminBusy()" (click)="archiveAdminCourse(course)">Retirar del catálogo</button> }</div></article>
+            } @empty { @if (!adminLoading()) { <div class="empty-inline">No hay cursos registrados.</div> } }
+          </section>
+        </div>
+      }
+      @if (adminTab() === 'purchases') {
+        <section class="panel admin-list-panel"><div class="panel-heading"><div><p class="eyebrow">VENTAS</p><h3>Solicitudes de compra</h3></div><span class="review-count">{{ pendingPurchasesCount() }} pendientes</span></div>
+          @for (purchase of adminPurchases(); track purchase.compraId) {
+            <article class="admin-purchase-row"><div><span class="admin-status">{{ purchase.estado }} · acceso {{ purchase.acceso }}</span><h3>{{ purchase.curso }}</h3><p>{{ purchase.monto }} {{ purchase.moneda }} · {{ purchase.fechaCompra | date: 'medium' }}</p><small>Estudiante {{ purchase.estudianteId }}</small></div><div class="admin-purchase-actions">@if (purchase.estado === 'PENDIENTE') { <button class="primary-button" [disabled]="adminBusy()" (click)="decidePurchase(purchase, 'APROBADO')">Aprobar</button><button class="secondary-button" [disabled]="adminBusy()" (click)="decidePurchase(purchase, 'RECHAZADO')">Rechazar</button> } @else if (purchase.estado === 'PAGADO') { <button class="secondary-button" [disabled]="adminBusy()" (click)="decidePurchase(purchase, 'REEMBOLSADO')">Registrar reembolso</button> }</div></article>
+          } @empty { <div class="empty-state"><span>✓</span><h3>No hay solicitudes de compra</h3><p>Cuando un estudiante solicite acceso a un curso, podrás revisarla aquí.</p></div> }
+        </section>
+      }
+    </section>
+  }
+  
 </main>
 
 <footer><span class="brand-mark small-mark">a</span><span>AulaBreve</span><small>Un poco cada día también es progreso.</small></footer>

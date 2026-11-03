@@ -1,9 +1,11 @@
 package com.aulabreve.catalogo.api;
 
 import com.aulabreve.catalogo.service.RegistroUsuarioService;
+import com.aulabreve.catalogo.security.UsuarioPrincipal;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,6 +21,7 @@ public class CuentaAuthController {
     public record TokenCsrf(String nombreHeader, String token) {}
     public record RegistroRequest(String nombre, String email, String password, String confirmacion) {}
     public record RegistroResponse(String id, String nombre, String email) {}
+    public record IdentidadResponse(String id, String nombre, String email, String rol) {}
 
     private final RegistroUsuarioService registro;
 
@@ -29,6 +32,18 @@ public class CuentaAuthController {
     @GetMapping("/csrf")
     public TokenCsrf csrf(CsrfToken token) {
         return new TokenCsrf(token.getHeaderName(), token.getToken());
+    }
+
+    @GetMapping("/me")
+    public IdentidadResponse identidad(@AuthenticationPrincipal UsuarioPrincipal principal) {
+        if (principal == null || !principal.isEnabled()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Inicia sesión para continuar");
+        }
+        String rol = principal.getAuthorities().stream()
+                .findFirst().map(authority -> authority.getAuthority().replaceFirst("^ROLE_", ""))
+                .orElse("ESTUDIANTE");
+        return new IdentidadResponse(principal.getId().toString(), principal.getNombre(),
+                principal.getUsername(), rol);
     }
 
     @PostMapping("/registro")

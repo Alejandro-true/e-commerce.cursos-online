@@ -90,6 +90,42 @@ export interface PurchaseRequest {
 
 export interface CsrfResponse { nombreHeader: string; token: string; }
 
+export interface AdminCategory { id: string; nombre: string; }
+export interface AdminCourse {
+  id: string;
+  categoriaId: string;
+  categoria: string;
+  titulo: string;
+  slug: string;
+  descripcion: string;
+  nivel: string;
+  miniaturaUrl: string | null;
+  estado: string;
+  precioBase: number | null;
+  moneda: string | null;
+}
+export interface AdminCoursePayload {
+  categoriaId: string;
+  titulo: string;
+  slug: string;
+  descripcion: string;
+  nivel: string;
+  miniaturaUrl: string | null;
+  precioBase: number;
+  moneda: string;
+}
+export interface AdminPurchase {
+  compraId: string;
+  estudianteId: string;
+  cursoId: string;
+  curso: string;
+  monto: string;
+  moneda: string;
+  estado: string;
+  acceso: string;
+  fechaCompra: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
@@ -123,7 +159,49 @@ export class ApiService {
   }
 
   getCurrentStudent(): Observable<CurrentStudent> {
-    return this.http.get<CurrentStudent>('/api/cuenta/yo');
+    return this.http.get<CurrentStudent>('/api/demo/auth/me');
+  }
+
+  listAdminCourses(): Observable<AdminCourse[]> {
+    return this.http.get<AdminCourse[]>('/api/demo/admin/cursos');
+  }
+
+  listAdminCategories(): Observable<AdminCategory[]> {
+    return this.http.get<AdminCategory[]>('/api/demo/admin/cursos/categorias');
+  }
+
+  listAdminPurchases(): Observable<AdminPurchase[]> {
+    return this.http.get<AdminPurchase[]>('/api/demo/panel/compras');
+  }
+
+  saveAdminCourse(payload: AdminCoursePayload, id?: string): Observable<unknown> {
+    return this.getAuthCsrf().pipe(switchMap((csrf) => {
+      const options = { headers: { [csrf.nombreHeader]: csrf.token } };
+      return id
+        ? this.http.put(`/api/demo/admin/cursos/${encodeURIComponent(id)}`, payload, options)
+        : this.http.post('/api/demo/admin/cursos', payload, options);
+    }));
+  }
+
+  deleteAdminCourse(id: string): Observable<void> {
+    return this.getAuthCsrf().pipe(switchMap((csrf) => this.http.delete<void>(
+      `/api/demo/admin/cursos/${encodeURIComponent(id)}`,
+      { headers: { [csrf.nombreHeader]: csrf.token } },
+    )));
+  }
+
+  archiveAdminCourse(id: string): Observable<unknown> {
+    return this.getAuthCsrf().pipe(switchMap((csrf) => this.http.post(
+      `/api/demo/admin/contenido/${encodeURIComponent(id)}/archivar`, {},
+      { headers: { [csrf.nombreHeader]: csrf.token } },
+    )));
+  }
+
+  decideAdminPurchase(id: string, resultado: 'APROBADO' | 'RECHAZADO' | 'REEMBOLSADO'): Observable<unknown> {
+    return this.getAuthCsrf().pipe(switchMap((csrf) => this.http.post(
+      `/api/demo/panel/compras/${encodeURIComponent(id)}/decision`, { resultado },
+      { headers: { [csrf.nombreHeader]: csrf.token } },
+    )));
   }
 
   requestCoursePurchase(courseId: string): Observable<PurchaseRequest> {

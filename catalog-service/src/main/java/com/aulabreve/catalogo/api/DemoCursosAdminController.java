@@ -51,4 +51,11 @@ public class DemoCursosAdminController {
         
         return cursos.editar(id, datos);
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void eliminar(@RequestHeader(value = "X-Demo-Key", required = false) String clave,
+                         @PathVariable UUID id) {
+        cursos.eliminarBorrador(id);
+    }
 }

@@ -22,7 +22,7 @@ public class SeguridadCuentaConfig {
     public SecurityFilterChain cadenaCuentas(HttpSecurity http) throws Exception {
         http.securityMatcher("/api/demo/auth/**")
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/demo/auth/csrf", "/api/demo/auth/registro",
+                .requestMatchers("/api/demo/auth/csrf", "/api/demo/auth/me", "/api/demo/auth/registro",
                         "/api/demo/auth/login", "/api/demo/auth/logout").permitAll()
                 .anyRequest().denyAll()
             )

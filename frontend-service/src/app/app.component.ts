@@ -4,6 +4,9 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   ApiService,
+  AdminCategory,
+  AdminCourse,
+  AdminPurchase,
   AchievementsResponse,
   CourseDetail,
   CourseModule,
@@ -13,7 +16,7 @@ import {
   Review,
 } from './core/api.service';
 
-type Section = 'catalog' | 'progress' | 'community';
+type Section = 'catalog' | 'progress' | 'community' | 'admin';
 type Page = 'portal' | 'login' | 'register' | 'account';
 
 @Component({
@@ -33,6 +36,14 @@ export class App implements OnInit {
   registerPassword = '';
   registerConfirmation = '';
   authBusy = signal(false);
+  readonly adminCourses = signal<AdminCourse[]>([]);
+  readonly adminCategories = signal<AdminCategory[]>([]);
+  readonly adminPurchases = signal<AdminPurchase[]>([]);
+  readonly adminTab = signal<'courses' | 'purchases'>('courses');
+  readonly adminLoading = signal(false);
+  readonly adminBusy = signal(false);
+  readonly editingAdminCourseId = signal<string | null>(null);
+  adminCourseForm = this.emptyAdminCourseForm();
 
   readonly courses = signal<CourseSummary[]>([]);
   readonly selectedCourse = signal<CourseDetail | null>(null);
@@ -53,8 +64,19 @@ export class App implements OnInit {
   reviewComment = '';
 
   ngOnInit(): void {
-    this.page.set(this.pageFromPath(window.location.pathname));
-    window.addEventListener('popstate', () => this.page.set(this.pageFromPath(window.location.pathname)));
+    const initialPath = window.location.pathname;
+    this.page.set(this.pageFromPath(initialPath));
+    if (initialPath === '/admin') this.section.set('admin');
+    window.addEventListener('popstate', () => {
+      const path = window.location.pathname;
+      this.page.set(this.pageFromPath(path));
+      if (path === '/admin') {
+        this.section.set('admin');
+        this.refreshIdentity();
+      } else if (this.page() === 'portal') {
+        this.section.set('catalog');
+      }
+    });
     this.refreshCourses();
     this.refreshIdentity();
   }
@@ -69,9 +91,11 @@ export class App implements OnInit {
   navigate(path: string): void {
     window.history.pushState({}, '', path);
     this.page.set(this.pageFromPath(path));
+    if (path === '/admin') this.section.set('admin');
+    else if (path === '/') this.section.set('catalog');
     this.error.set('');
     this.notice.set('');
-    if (path === '/') this.refreshIdentity();
+    if (path === '/' || path === '/admin') this.refreshIdentity();
   }
 
   submitLogin(): void {
@@ -112,6 +136,112 @@ export class App implements OnInit {
     });
   }
 
+  private emptyAdminCourseForm() {
+    return { categoriaId: '', titulo: '', slug: '', descripcion: '', nivel: 'BASICO',
+      miniaturaUrl: '', precioBase: 0, moneda: 'PEN' };
+  }
+
+  loadAdminPanel(): void {
+    if (this.currentStudent()?.rol !== 'ADMIN') return;
+    this.adminLoading.set(true);
+    this.api.listAdminCourses().subscribe({
+      next: (items) => { this.adminCourses.set(items); this.adminLoading.set(false); },
+      error: (error: HttpErrorResponse) => { this.adminLoading.set(false); this.error.set(this.describeError(error, 'No se pudieron cargar los cursos.')); },
+    });
+    this.api.listAdminCategories().subscribe({
+      next: (items) => this.adminCategories.set(items),
+      error: (error: HttpErrorResponse) => this.error.set(this.describeError(error, 'No se pudieron cargar las categorías.')),
+    });
+    this.api.listAdminPurchases().subscribe({
+      next: (items) => this.adminPurchases.set(items),
+      error: (error: HttpErrorResponse) => this.error.set(this.describeError(error, 'No se pudieron cargar las solicitudes de compra.')),
+    });
+  }
+
+  editAdminCourse(course: AdminCourse): void {
+    this.editingAdminCourseId.set(course.id);
+    this.adminCourseForm = {
+      categoriaId: course.categoriaId,
+      titulo: course.titulo,
+      slug: course.slug,
+      descripcion: course.descripcion,
+      nivel: course.nivel,
+      miniaturaUrl: course.miniaturaUrl ?? '',
+      precioBase: course.precioBase ?? 0,
+      moneda: course.moneda ?? 'PEN',
+    };
+  }
+
+  cancelAdminCourseEdit(): void {
+    this.editingAdminCourseId.set(null);
+    this.adminCourseForm = this.emptyAdminCourseForm();
+  }
+
+  saveAdminCourse(): void {
+    this.adminBusy.set(true);
+    this.error.set('');
+    const payload = { ...this.adminCourseForm, miniaturaUrl: this.adminCourseForm.miniaturaUrl.trim() || null };
+    this.api.saveAdminCourse(payload, this.editingAdminCourseId() ?? undefined).subscribe({
+      next: () => {
+        this.adminBusy.set(false);
+        this.notice.set(this.editingAdminCourseId() ? 'Borrador actualizado.' : 'Curso creado como borrador.');
+        this.cancelAdminCourseEdit();
+        this.loadAdminPanel();
+      },
+      error: (error: HttpErrorResponse) => { this.adminBusy.set(false); this.error.set(this.describeError(error, 'No se pudo guardar el curso.')); },
+    });
+  }
+
+  decidePurchase(purchase: AdminPurchase, resultado: 'APROBADO' | 'RECHAZADO' | 'REEMBOLSADO'): void {
+    this.adminBusy.set(true);
+    this.error.set('');
+    this.api.decideAdminPurchase(purchase.compraId, resultado).subscribe({
+      next: () => {
+        this.adminBusy.set(false);
+        this.notice.set(`Solicitud ${resultado.toLowerCase()}.`);
+        this.loadAdminPanel();
+      },
+      error: (error: HttpErrorResponse) => { this.adminBusy.set(false); this.error.set(this.describeError(error, 'No se pudo actualizar la compra.')); },
+    });
+  }
+
+  deleteAdminCourse(course: AdminCourse): void {
+    if (!window.confirm(`¿Eliminar el borrador «${course.titulo}»? Esta acción no se puede deshacer.`)) return;
+    this.adminBusy.set(true);
+    this.error.set('');
+    this.api.deleteAdminCourse(course.id).subscribe({
+      next: () => {
+        this.adminBusy.set(false);
+        this.notice.set('Borrador eliminado.');
+        if (this.editingAdminCourseId() === course.id) this.cancelAdminCourseEdit();
+        this.loadAdminPanel();
+      },
+      error: (error: HttpErrorResponse) => { this.adminBusy.set(false); this.error.set(this.describeError(error, 'No se pudo eliminar el curso.')); },
+    });
+  }
+
+  archiveAdminCourse(course: AdminCourse): void {
+    if (!window.confirm(`¿Retirar «${course.titulo}» del catálogo? Se conservará el historial de estudiantes.`)) return;
+    this.adminBusy.set(true);
+    this.error.set('');
+    this.api.archiveAdminCourse(course.id).subscribe({
+      next: () => {
+        this.adminBusy.set(false);
+        this.notice.set('Curso retirado del catálogo.');
+        this.loadAdminPanel();
+      },
+      error: (error: HttpErrorResponse) => { this.adminBusy.set(false); this.error.set(this.describeError(error, 'No se pudo retirar el curso.')); },
+    });
+  }
+
+  countCoursesByState(state: string): number {
+    return this.adminCourses().filter((course) => course.estado === state).length;
+  }
+
+  pendingPurchasesCount(): number {
+    return this.adminPurchases().filter((purchase) => purchase.estado === 'PENDIENTE').length;
+  }
+
   refreshCourses(): void {
     this.loading.set(true);
     this.error.set('');
@@ -128,11 +258,13 @@ export class App implements OnInit {
   }
 
   selectSection(section: Section): void {
+    if (section === 'admin' && this.currentStudent()?.rol !== 'ADMIN') return;
     this.section.set(section);
     this.error.set('');
     this.notice.set('');
     if (section === 'community' && this.selectedCourse()) this.refreshReviews();
     if (section === 'progress' && this.selectedCourse()) this.refreshProgress();
+    if (section === 'admin') this.loadAdminPanel();
   }
 
   openCourse(summary: CourseSummary, destination: Section = 'progress'): void {
@@ -162,8 +294,14 @@ export class App implements OnInit {
     this.api.getCurrentStudent().subscribe({
       next: (student) => {
         this.currentStudent.set(student);
-        this.studentId.set(student.id);
-        this.refreshAchievements();
+        if (this.section() === 'admin' && student.rol !== 'ADMIN') {
+          this.navigate('/');
+          return;
+        }
+        const esEstudiante = student.rol === 'ESTUDIANTE';
+        this.studentId.set(esEstudiante ? student.id : '');
+        if (esEstudiante) this.refreshAchievements();
+        if (student.rol === 'ADMIN' && this.section() === 'admin') this.loadAdminPanel();
         if (this.selectedCourse()) this.refreshProgress();
       },
       error: () => {
@@ -171,6 +309,7 @@ export class App implements OnInit {
         this.studentId.set('');
         this.achievements.set(null);
         this.progress.set(null);
+        if (this.section() === 'admin') this.navigate('/');
       },
     });
   }
