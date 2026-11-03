@@ -28,9 +28,11 @@ public class DemoVideoAlmacenPrivado {
     private static final long MAX_BYTES = 200L * 1024L * 1024L;
     private final Path raiz;
 
-    public DemoVideoAlmacenPrivado(@Value("${VIDEO_STORAGE_DIR:}") String directorio) {
+    public DemoVideoAlmacenPrivado(
+            @Value("${app.demo.video.storage-dir:./data/videos}") String directorio) {
         if (directorio == null || directorio.isBlank()) {
-            throw new IllegalStateException("Configura VIDEO_STORAGE_DIR en CatalogoService/.env");
+            throw new IllegalStateException(
+                    "El directorio privado de videos no puede estar vacío (app.demo.video.storage-dir)");
         }
         try {
             raiz = Paths.get(directorio).toAbsolutePath().normalize();
