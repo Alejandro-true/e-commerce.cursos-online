@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { CourseAccess } from './features/learning/course-access.service';
+import { CourseContentEditor } from './features/admin/content/course-content-editor.component';
 import {
   ApiService,
   AdminCategory,
@@ -20,13 +22,15 @@ type Section = 'catalog' | 'progress' | 'community' | 'admin';
 type Page = 'portal' | 'login' | 'register' | 'account';
 
 @Component({
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CourseContentEditor],
   selector: 'app-root',
   styleUrl: './app.component.scss',
   templateUrl: './app.component.html',
 })
 export class App implements OnInit {
   private readonly api = inject(ApiService);
+  readonly access = inject(CourseAccess);
+  readonly contentCourse = signal<AdminCourse | null>(null);
 
   readonly page = signal<Page>('portal');
   loginEmail = '';
@@ -131,7 +135,11 @@ export class App implements OnInit {
 
   logout(): void {
     this.api.logout().subscribe({
-      next: () => { this.currentStudent.set(null); this.studentId.set(''); this.navigate('/'); },
+      next: () => {
+        this.access.setAccount(null);
+        this.contentCourse.set(null);
+        this.currentStudent.set(null); this.studentId.set(''); this.navigate('/');
+      },
       error: (error: HttpErrorResponse) => this.error.set(this.describeError(error, 'No se pudo cerrar la sesión.')),
     });
   }
@@ -145,7 +153,12 @@ export class App implements OnInit {
     if (this.currentStudent()?.rol !== 'ADMIN') return;
     this.adminLoading.set(true);
     this.api.listAdminCourses().subscribe({
-      next: (items) => { this.adminCourses.set(items); this.adminLoading.set(false); },
+      next: (items) => {
+        this.adminCourses.set(items);
+        const selected = this.contentCourse();
+        if (selected) this.contentCourse.set(items.find(course => course.id === selected.id) ?? null);
+        this.adminLoading.set(false);
+      },
       error: (error: HttpErrorResponse) => { this.adminLoading.set(false); this.error.set(this.describeError(error, 'No se pudieron cargar los cursos.')); },
     });
     this.api.listAdminCategories().subscribe({
@@ -175,6 +188,18 @@ export class App implements OnInit {
   cancelAdminCourseEdit(): void {
     this.editingAdminCourseId.set(null);
     this.adminCourseForm = this.emptyAdminCourseForm();
+  }
+
+  openAdminContent(course: AdminCourse): void {
+    if (this.currentStudent()?.rol !== 'ADMIN') return;
+    this.contentCourse.set(course);
+    this.error.set('');
+    this.notice.set('');
+  }
+
+  adminContentChanged(): void {
+    this.loadAdminPanel();
+    this.refreshCourses();
   }
 
   saveAdminCourse(): void {
@@ -279,6 +304,7 @@ export class App implements OnInit {
         this.activeVideoUrl.set('');
         this.loading.set(false);
         this.section.set(destination);
+        this.access.refresh();
         if (destination === 'progress') this.refreshProgress();
         this.refreshReviews();
         this.refreshAchievements();
@@ -294,6 +320,7 @@ export class App implements OnInit {
     this.api.getCurrentStudent().subscribe({
       next: (student) => {
         this.currentStudent.set(student);
+        this.access.setAccount(student);
         if (this.section() === 'admin' && student.rol !== 'ADMIN') {
           this.navigate('/');
           return;
@@ -305,6 +332,7 @@ export class App implements OnInit {
         if (this.selectedCourse()) this.refreshProgress();
       },
       error: () => {
+        this.access.setAccount(null);
         this.currentStudent.set(null);
         this.studentId.set('');
         this.achievements.set(null);
@@ -360,16 +388,18 @@ export class App implements OnInit {
 
   requestPurchase(): void {
     const course = this.selectedCourse();
-    if (!course || !this.studentId()) return;
+    if (!course || !this.studentId() || this.requestingPurchase() || !this.access.canRequest(course.id)) return;
     this.requestingPurchase.set(true);
     this.error.set('');
     this.api.requestCoursePurchase(course.id).subscribe({
       next: (purchase) => {
         this.requestingPurchase.set(false);
         this.notice.set(`Solicitud creada (${purchase.estado}). El acceso se habilitará al confirmarse la compra.`);
+        this.access.refresh();
       },
       error: (error: HttpErrorResponse) => {
         this.requestingPurchase.set(false);
+        this.access.refresh();
         this.error.set(this.describeError(error, 'No se pudo solicitar la compra.'));
       },
     });

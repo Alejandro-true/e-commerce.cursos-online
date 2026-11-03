@@ -137,9 +137,17 @@
         <div><button class="back-link" (click)="backToCatalog()">← Volver al catálogo</button><p class="eyebrow">{{ course.categoria?.nombre ?? 'CURSO' }} · VERSIÓN {{ course.numeroVersion }}</p><h2>{{ course.titulo }}</h2><p class="course-description">{{ course.descripcion }}</p></div>
         <div class="course-actions">
           @if (studentId()) {
-            <button class="primary-button" (click)="requestPurchase()" [disabled]="requestingPurchase()">
-              {{ requestingPurchase() ? 'Enviando…' : 'Solicitar acceso al curso' }}
-            </button>
+            @if (access.hasAccess(course.id)) {
+              <span class="course-access-badge" role="status">✓ Ya tienes acceso a este curso</span>
+            } @else if (access.state() === 'loading') {
+              <span class="muted" role="status">Comprobando tu acceso…</span>
+            } @else if (access.state() === 'error') {
+              <div class="course-access-error"><span role="status">No se pudo comprobar tu acceso.</span><button class="secondary-button" (click)="access.refresh()">Reintentar</button></div>
+            } @else if (access.canRequest(course.id)) {
+              <button class="primary-button" (click)="requestPurchase()" [disabled]="requestingPurchase()">
+                {{ requestingPurchase() ? 'Enviando…' : 'Solicitar acceso al curso' }}
+              </button>
+            }
           }
           <button class="secondary-button" (click)="selectSection('community')">Ver reseñas y logros</button>
         </div>
@@ -262,7 +270,9 @@
         <article class="admin-stat-card"><span class="admin-stat-icon blue">↗</span><div><small>Compras por revisar</small><strong>{{ pendingPurchasesCount() }}</strong><span>solicitudes pendientes</span></div></article>
       </div>
       <div class="admin-tabs"><button [class.active]="adminTab() === 'courses'" (click)="adminTab.set('courses')">Cursos <span>{{ adminCourses().length }}</span></button><button [class.active]="adminTab() === 'purchases'" (click)="adminTab.set('purchases')">Compras <span>{{ pendingPurchasesCount() }}</span></button></div>
-      @if (adminTab() === 'courses') {
+      @if (adminTab() === 'courses' && contentCourse(); as selectedContent) {
+        <app-admin-content [course]="selectedContent" (back)="contentCourse.set(null)" (changed)="adminContentChanged()" />
+      } @else if (adminTab() === 'courses') {
         <div class="admin-grid">
           <section class="panel admin-form-panel"><p class="eyebrow">{{ editingAdminCourseId() ? 'EDITAR BORRADOR' : 'NUEVO CONTENIDO' }}</p><h3>{{ editingAdminCourseId() ? 'Editar curso' : 'Crear curso' }}</h3>
             <form class="admin-form" (ngSubmit)="saveAdminCourse()">
@@ -278,7 +288,7 @@
           <section class="panel admin-list-panel"><div class="panel-heading"><div><p class="eyebrow">CATÁLOGO</p><h3>Cursos registrados</h3></div></div>
             @if (adminLoading()) { <div class="loading-line">Cargando cursos…</div> }
             @for (course of adminCourses(); track course.id) {
-              <article class="admin-course-row"><div class="admin-course-info"><span class="admin-status" [class]="'admin-status state-' + course.estado.toLowerCase()">{{ course.estado }}</span><h3>{{ course.titulo }}</h3><p>{{ course.categoria }} · {{ course.nivel }} · {{ course.precioBase ?? 0 }} {{ course.moneda ?? 'PEN' }}</p><small>{{ course.slug }}</small></div><div class="admin-course-actions">@if (course.estado === 'BORRADOR') { <button class="admin-action-edit" (click)="editAdminCourse(course)">Editar</button><button class="admin-action-delete" [disabled]="adminBusy()" (click)="deleteAdminCourse(course)">Eliminar</button> } @else if (course.estado === 'PUBLICADO') { <button class="admin-action-delete" [disabled]="adminBusy()" (click)="archiveAdminCourse(course)">Retirar del catálogo</button> }</div></article>
+              <article class="admin-course-row"><div class="admin-course-info"><span class="admin-status" [class]="'admin-status state-' + course.estado.toLowerCase()">{{ course.estado }}</span><h3>{{ course.titulo }}</h3><p>{{ course.categoria }} · {{ course.nivel }} · {{ course.precioBase ?? 0 }} {{ course.moneda ?? 'PEN' }}</p><small>{{ course.slug }}</small></div><div class="admin-course-actions">@if (course.estado !== 'ARCHIVADO') { <button class="admin-action-edit" [disabled]="adminBusy()" (click)="openAdminContent(course)">Lecciones y video</button> }@if (course.estado === 'BORRADOR') { <button class="admin-action-edit" (click)="editAdminCourse(course)">Editar</button><button class="admin-action-delete" [disabled]="adminBusy()" (click)="deleteAdminCourse(course)">Eliminar</button> } @else if (course.estado === 'PUBLICADO') { <button class="admin-action-delete" [disabled]="adminBusy()" (click)="archiveAdminCourse(course)">Retirar del catálogo</button> }</div></article>
             } @empty { @if (!adminLoading()) { <div class="empty-inline">No hay cursos registrados.</div> } }
           </section>
         </div>

@@ -6,3 +6,5 @@
 .auth-card label { display: grid; gap: .45rem; font-weight: 600; }
 .auth-card input { width: 100%; padding: .85rem 1rem; border: 1px solid #d8d2e2; border-radius: .75rem; font: inherit; }
 .auth-card > p { margin-top: 1.25rem; }
+.course-access-badge { color: #286344; background: #e9f4ec; border: 1px solid #cee4d3; border-radius: 20px; padding: 10px 14px; font-size: 11px; font-weight: 700; }
+.course-access-error { display: flex; gap: 9px; align-items: center; color: #815d3b; font-size: 11px; }

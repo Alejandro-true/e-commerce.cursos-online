@@ -1,0 +1,289 @@
+<button class="secondary-button back" [disabled]="busy() || loading()" (click)="back.emit()">
+  ← Volver a cursos
+</button>
+<div class="heading">
+  <div>
+    <p class="eyebrow">EL CONTENIDO HACE LA DIFERENCIA</p>
+    <h2>{{ course().titulo }}</h2>
+    <p class="content-note">
+      Prepara una versión, añade módulos y lecciones y publica cuando todo esté listo.
+    </p>
+  </div>
+  <div class="actions">
+    <button class="secondary-button" [disabled]="busy() || loading()" (click)="reload()">
+      ↻ Actualizar contenido
+    </button>
+    @if (content()?.estado !== 'ARCHIVADO' && content()) {
+      <button class="secondary-button danger" [disabled]="busy() || loading()" (click)="archive()">
+        Archivar curso
+      </button>
+    }
+  </div>
+</div>
+@if (error()) {
+  <div class="message error" role="alert">
+    {{ error() }} <button class="secondary-button" (click)="reload()">Actualizar contenido</button>
+  </div>
+}
+@if (notice()) {
+  <div class="message" role="status">{{ notice() }}</div>
+}
+@if (busy()) {
+  <p class="content-note" role="status">
+    Procesando los cambios. Espera a que termine la operación…
+  </p>
+}
+@if (loading()) {
+  <p class="content-note" role="status">Cargando contenido…</p>
+}
+@if (content(); as data) {
+  @if (data.estado === 'ARCHIVADO') {
+    <div class="message">Este curso está archivado. Su historial se conserva para consulta.</div>
+  }
+  <div class="heading">
+    <h3>Versiones del curso</h3>
+    @if (data.estado !== 'ARCHIVADO') {
+      <button class="secondary-button" [disabled]="busy() || loading()" (click)="open('version')">
+        ＋ Nueva versión
+      </button>
+    }
+  </div>
+  @if (kind()) {
+    <section class="panel content-form" id="content-form">
+      <h3>
+        {{
+          kind() === 'version'
+            ? 'Nueva versión'
+            : kind() === 'module'
+              ? 'Nuevo módulo'
+              : kind() === 'lesson'
+                ? 'Nueva lección'
+                : 'Nuevo recurso'
+        }}
+      </h3>
+      <form class="admin-form" #editor="ngForm" (ngSubmit)="editor.valid && save()">
+        <div class="fields">
+          @if (kind() === 'version') {
+            <label class="wide"
+              >Número de versión<input
+                name="version"
+                [(ngModel)]="versionNumber"
+                required
+                maxlength="10"
+                placeholder="Por ejemplo: 1.0"
+            /></label>
+          } @else {
+            <label class="wide"
+              >{{ kind() === 'resource' ? 'Nombre del recurso' : 'Título'
+              }}<input
+                name="titulo"
+                [(ngModel)]="title"
+                required
+                [maxLength]="kind() === 'resource' ? 100 : 150"
+            /></label>
+            @if (kind() !== 'resource') {
+              <label class="wide"
+                >Descripción<textarea
+                  name="descripcion"
+                  [(ngModel)]="description"
+                  rows="2"
+                ></textarea></label
+              ><label
+                >Orden<input
+                  name="orden"
+                  type="number"
+                  [(ngModel)]="order"
+                  required
+                  min="1"
+                  step="1"
+              /></label>
+            }
+            @if (kind() === 'lesson') {
+              <label
+                >Tipo<select name="tipo" [(ngModel)]="lessonType">
+                  <option value="LECTURA">Lectura</option>
+                  <option value="VIDEO">Video</option>
+                </select></label
+              >
+              @if (lessonType === 'LECTURA') {
+                <label class="wide"
+                  >Contenido de la lectura<textarea
+                    name="texto"
+                    [(ngModel)]="lessonText"
+                    required
+                    rows="5"
+                  ></textarea>
+                </label>
+              } @else {
+                <p class="content-note wide">
+                  La lección se creará con video pendiente. Después podrás subir su MP4 desde la
+                  lista.
+                </p>
+              }
+              <label
+                >Duración en segundos (opcional)<input
+                  name="duracion"
+                  type="number"
+                  [(ngModel)]="duration"
+                  min="0"
+                  step="1"
+              /></label>
+              <label class="checkbox wide"
+                ><input name="obligatoria" type="checkbox" [(ngModel)]="requiredLesson" /> Lección
+                obligatoria para completar el módulo</label
+              >
+            }
+            @if (kind() === 'resource') {
+              <label
+                >Tipo de archivo<select name="tipoArchivo" [(ngModel)]="resourceType">
+                  <option>PDF</option>
+                  <option>ZIP</option>
+                  <option>DOCX</option>
+                </select></label
+              ><label class="wide"
+                >Referencia del archivo<input
+                  name="referencia"
+                  [(ngModel)]="resourceReference"
+                  required
+                  maxlength="500"
+                  placeholder="Referencia del archivo en el almacenamiento configurado"
+              /></label>
+              <p class="content-note wide">
+                Este formulario registra la referencia de un archivo existente; no sube documentos.
+              </p>
+            }
+          }
+        </div>
+        <div class="actions form-actions">
+          <button
+            class="primary-button"
+            type="submit"
+            [disabled]="editor.invalid || busy() || loading()"
+          >
+            {{ busy() ? 'Guardando…' : 'Guardar' }}</button
+          ><button
+            class="secondary-button"
+            type="button"
+            [disabled]="busy() || loading()"
+            (click)="kind.set(null)"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+  @for (version of data.versiones; track version.id) {
+    <section class="version panel">
+      <div class="heading">
+        <div class="actions">
+          <h3>Versión {{ version.numeroVersion }}</h3>
+          <span class="admin-status" [class.good]="version.estado === 'PUBLICADA'">{{
+            version.estado
+          }}</span>
+          @if (version.ofertada) {
+            <span class="content-note">Visible en el catálogo</span>
+          }
+        </div>
+        @if (editable(version)) {
+          <div class="actions">
+            <button
+              class="secondary-button"
+              [disabled]="busy() || loading()"
+              (click)="open('module', version.id, nextOrder(version.modulos))"
+            >
+              ＋ Módulo</button
+            ><button
+              class="primary-button"
+              [disabled]="busy() || loading() || !canPublish(version)"
+              (click)="publish(version)"
+            >
+              Publicar versión ↗
+            </button>
+          </div>
+        }
+      </div>
+      @if (editable(version)) {
+        <p class="content-note">
+          Para publicar necesitas precio, al menos un módulo y una lección obligatoria con video
+          listo.
+        </p>
+      }
+      @if (editable(version)) {
+        <ul class="publication-checks" aria-label="Requisitos para publicar">
+          @for (check of checks(version); track check.label) {
+            <li [class.complete]="check.complete">
+              <span aria-hidden="true">{{ check.complete ? '✓' : '○' }}</span
+              >{{ check.label }}
+            </li>
+          }
+        </ul>
+      }
+      @for (module of version.modulos; track module.id) {
+        <article class="module">
+          <div class="module-heading">
+            <span class="module-order">{{ module.orden < 10 ? '0' : '' }}{{ module.orden }}</span>
+            <div>
+              <h4>{{ module.titulo }}</h4>
+              <p class="content-note">{{ module.descripcion }}</p>
+            </div>
+            @if (editable(version)) {
+              <button
+                class="secondary-button"
+                [disabled]="busy() || loading()"
+                (click)="open('lesson', module.id, nextOrder(module.lecciones))"
+              >
+                ＋ Lección
+              </button>
+            }
+          </div>
+          @for (lesson of module.lecciones; track lesson.id) {
+            <div class="lesson">
+              <div>
+                <strong>{{ lesson.orden }}. {{ lesson.titulo }}</strong>
+                <p class="content-note">
+                  {{ lesson.tipo === 'VIDEO' ? 'Video · ' + lesson.estadoVideo : 'Lectura' }} ·
+                  {{ lesson.obligatorio ? 'Obligatoria' : 'Opcional' }}
+                </p>
+                @for (resource of lesson.recursos; track resource.id) {
+                  <span class="resource">↳ {{ resource.nombre }} · {{ resource.tipoArchivo }}</span>
+                }
+              </div>
+              @if (editable(version)) {
+                <div class="actions">
+                  @if (lesson.tipo === 'VIDEO') {
+                    <label class="secondary-button upload"
+                      >{{ lesson.estadoVideo === 'LISTO' ? 'Sustituir MP4' : 'Subir MP4'
+                      }}<input
+                        type="file"
+                        accept="video/mp4,.mp4"
+                        [disabled]="busy() || loading()"
+                        [attr.aria-label]="'Subir video para ' + lesson.titulo"
+                        (change)="upload(lesson.id, $event)"
+                    /></label>
+                  }
+                  <button
+                    class="secondary-button"
+                    [disabled]="busy() || loading()"
+                    (click)="open('resource', lesson.id)"
+                  >
+                    ＋ Recurso
+                  </button>
+                </div>
+              }
+            </div>
+          } @empty {
+            <p class="content-note">Este módulo todavía no tiene lecciones.</p>
+          }
+        </article>
+      } @empty {
+        <div class="empty">Añade el primer módulo de esta versión.</div>
+      }
+    </section>
+  } @empty {
+    <div class="empty">
+      <h3>El curso está listo para tus ideas</h3>
+      <p>Crea su primera versión para comenzar a añadir contenido.</p>
+    </div>
+  }
+}

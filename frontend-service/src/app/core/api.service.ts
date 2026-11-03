@@ -88,6 +88,15 @@ export interface PurchaseRequest {
   estado: string;
 }
 
+export interface AcquiredCourse {
+  cursoId: string;
+  titulo: string;
+  cursoVersionId: string;
+  numeroVersion: string;
+  fechaOtorgamiento: string;
+  fechaExpiracion: string | null;
+}
+
 export interface CsrfResponse { nombreHeader: string; token: string; }
 
 export interface AdminCategory { id: string; nombre: string; }
@@ -214,6 +223,10 @@ export class ApiService {
         ),
       ),
     );
+  }
+
+  listMyCourses(): Observable<AcquiredCourse[]> {
+    return this.http.get<AcquiredCourse[]>('/api/cuenta/mis-cursos');
   }
 
   getVideoLink(lessonId: string): Observable<{ urlTemporal: string; expiraEn: string }> {
