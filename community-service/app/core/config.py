@@ -10,6 +10,13 @@ class Settings(BaseSettings):
     db_name: str = "comunidad_db"
     db_user: str = "comunidad_user"
     db_password: SecretStr
+    auth_mode: str = "strict"
+    catalog_service_url: str = "http://localhost:8080"
+    service_api_key: str = ""
+    rabbitmq_url: str = ""
+    rabbitmq_exchange: str = "aulabreve.domain.events"
+    rabbitmq_queue: str = "community.modulo-completado"
+    cors_allowed_origins: str = "http://localhost:4200,http://127.0.0.1:4200"
 
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parents[2] / ".env",

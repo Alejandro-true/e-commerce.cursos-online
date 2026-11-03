@@ -30,8 +30,8 @@ class ModuleReward(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    estudiante_id: Mapped[int] = mapped_column(Integer)
-    modulo_id: Mapped[int] = mapped_column(Integer)
+    estudiante_id: Mapped[str] = mapped_column(String(100))
+    modulo_id: Mapped[str] = mapped_column(String(36))
 
     puntos: Mapped[int] = mapped_column(
         Integer,

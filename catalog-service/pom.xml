@@ -58,13 +58,10 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-<<<<<<< HEAD
-=======
-    		<groupId>org.springframework.boot</groupId>
-    		<artifactId>spring-boot-starter-security</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 		<dependency>
->>>>>>> origin/feature/catalogo
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
@@ -99,12 +96,10 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-<<<<<<< HEAD
-=======
 		<!-- Migraciones de la base de datos -->
 		<dependency>
-    		<groupId>org.springframework.boot</groupId>
-    		<artifactId>spring-boot-starter-flyway</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
 		</dependency>
 
 		<!-- Soporte de Flyway para PostgreSQL -->
@@ -113,11 +108,9 @@
     		<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
 		<dependency>
-       		<groupId>com.fasterxml.jackson.core</groupId>
-       		<artifactId>jackson-databind</artifactId>
-   		</dependency>
-
->>>>>>> origin/feature/catalogo
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

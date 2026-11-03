@@ -12,7 +12,7 @@ from app.schemas.review import ReviewCreate
 
 def list_reviews(
     db: Session,
-    curso_id: int,
+    curso_id: str,
     limit: int = 20,
     offset: int = 0,
 ) -> list[Review]:
@@ -32,7 +32,7 @@ def list_reviews(
 def create_review(
     db: Session,
     data: ReviewCreate,
-    estudiante_id: int,
+    estudiante_id: str,
     catalog_client: CatalogClient,
 ) -> Review:
     access = catalog_client.has_active_access(

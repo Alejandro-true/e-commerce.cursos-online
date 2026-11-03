@@ -5,6 +5,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    String,
     Text,
     func,
 )
@@ -35,7 +36,7 @@ class ReviewModeration(Base):
         index=True,
     )
 
-    administrador_id: Mapped[int] = mapped_column(Integer)
+    administrador_id: Mapped[str] = mapped_column(String(100))
     motivo: Mapped[str] = mapped_column(Text)
 
     moderada_en: Mapped[datetime] = mapped_column(

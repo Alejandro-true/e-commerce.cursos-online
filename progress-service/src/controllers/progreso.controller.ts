@@ -62,21 +62,27 @@ export class ProgresoController {
   @ApiResponse({ status: 200, description: 'Avance del módulo y curso actualizado' })
   async completarLeccionModulo(
     @Body() dto: CompletarLeccionModuloDto,
-    @Headers('authorization') authorization: string | undefined,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Req() request: AuthenticatedRequest,
   ) {
     if (!idempotencyKey?.trim()) {
       throw new BadRequestException('Se requiere el encabezado Idempotency-Key');
     }
-    const token = authorization?.replace(/^Bearer\s+/i, '');
-    if (!token) throw new BadRequestException('Falta el token Bearer');
     return this.servicioModulo.completarLeccion(
       request.user.idUsuario,
       dto,
-      token,
       idempotencyKey.trim(),
     );
+  }
+
+  @Get('modulo/curso/:idCurso/version/:versionCurso')
+  @ApiOperation({ summary: 'Consultar el progreso por módulos del usuario autenticado' })
+  async obtenerProgresoModulo(
+    @Param('idCurso') idCurso: string,
+    @Param('versionCurso') versionCurso: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.servicioModulo.consultarCurso(request.user.idUsuario, idCurso, versionCurso);
   }
 
   @Post('desmarcar-leccion')

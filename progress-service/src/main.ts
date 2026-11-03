@@ -10,7 +10,11 @@ async function bootstrap() {
     instrument: ObserveInstrument,
   });
 
-  app.enableCors();
+  const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? 'http://localhost:4200')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  app.enableCors({ origin: allowedOrigins, credentials: false });
 
   app.useGlobalPipes(
     new ValidationPipe({

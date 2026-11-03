@@ -3,6 +3,7 @@ package com.aulabreve.catalogo.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,7 +24,10 @@ public class SeguridadCuentaConfig {
      */
     @Bean
     @Order(1)
-    public SecurityFilterChain cadenaCuentas(HttpSecurity http) throws Exception {
+    public SecurityFilterChain cadenaCuentas(
+            HttpSecurity http,
+            @Value("${app.frontend.base-url:http://localhost:4200}") String frontendBaseUrl)
+            throws Exception {
         http.securityMatcher("/registro", "/ingresar", "/cuenta", "/cuenta/**", "/salir")
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/registro", "/ingresar").permitAll()
@@ -32,7 +36,7 @@ public class SeguridadCuentaConfig {
             .formLogin(form -> form
                 .loginPage("/ingresar")
                 .loginProcessingUrl("/ingresar")
-                .defaultSuccessUrl("/cuenta", true)
+                .defaultSuccessUrl(frontendBaseUrl, true)
                 .failureUrl("/ingresar?error")
                 .permitAll()
             )

@@ -31,7 +31,7 @@ def hide_review_endpoint(
     resena_id: Annotated[int, Path(gt=0)],
     data: ReviewHideRequest,
     db: Annotated[Session, Depends(get_db)],
-    administrador_id: Annotated[int, Depends(get_current_admin_id)],
+    administrador_id: Annotated[str, Depends(get_current_admin_id)],
 ):
     try:
         return hide_review(

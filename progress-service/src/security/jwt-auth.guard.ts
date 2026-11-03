@@ -16,6 +16,16 @@ interface AuthenticatedRequest extends Request {
 export class JwtAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    if (process.env.AUTH_MODE === 'development') {
+      const studentId = request.headers['x-student-id'];
+      if (typeof studentId !== 'string' || !studentId.trim()) {
+        throw new UnauthorizedException('Envía el encabezado X-Student-Id para el modo local');
+      }
+      request.user = { idUsuario: studentId.trim(), roles: ['ESTUDIANTE'] };
+      this.validarUsuarioSolicitado(request, studentId.trim());
+      return true;
+    }
+
     const authorization = request.headers.authorization;
     const token = authorization?.startsWith('Bearer ')
       ? authorization.slice('Bearer '.length)
@@ -43,21 +53,25 @@ export class JwtAuthGuard implements CanActivate {
         : typeof rolesClaim === 'string'
           ? [rolesClaim]
           : [];
-      const requestedUser =
-        request.params.idUsuario ??
-        (request.body && typeof request.body === 'object'
-          ? (request.body as Record<string, unknown>).idUsuario
-          : undefined);
-      if (typeof requestedUser === 'string' && requestedUser !== payload.sub) {
-        throw new ForbiddenException('No puedes consultar el progreso de otro usuario');
-      }
       request.user = { idUsuario: payload.sub, roles };
+      this.validarUsuarioSolicitado(request, payload.sub);
       return true;
     } catch (error) {
       if (error instanceof ForbiddenException || error instanceof UnauthorizedException) {
         throw error;
       }
       throw new UnauthorizedException('Token inválido o expirado');
+    }
+  }
+
+  private validarUsuarioSolicitado(request: AuthenticatedRequest, authenticatedId: string): void {
+    const requestedUser =
+      request.params.idUsuario ??
+      (request.body && typeof request.body === 'object'
+        ? (request.body as Record<string, unknown>).idUsuario
+        : undefined);
+    if (typeof requestedUser === 'string' && requestedUser !== authenticatedId) {
+      throw new ForbiddenException('No puedes consultar el progreso de otro usuario');
     }
   }
 }

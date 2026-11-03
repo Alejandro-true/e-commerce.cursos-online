@@ -15,7 +15,7 @@ def hide_review(
     db: Session,
     resena_id: int,
     data: ReviewHideRequest,
-    administrador_id: int,
+    administrador_id: str,
 ) -> ReviewModeration:
     try:
         review = db.scalar(

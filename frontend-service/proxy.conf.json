@@ -1,0 +1,51 @@
+{
+  "/ingresar": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/registro": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/cuenta": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/salir": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/api/cuenta": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/cuenta": "/api/demo/cuenta" }
+  },
+  "/api/demo/video": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/api/catalogo": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/catalogo": "/api/demo/portal" }
+  },
+  "/api/progreso": {
+    "target": "http://localhost:3000",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/progreso": "/progreso" }
+  },
+  "/api/comunidad": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/comunidad": "" }
+  }
+}

@@ -20,17 +20,69 @@ export class ProgresoModuloService {
     private readonly catalogo: CatalogoClient,
   ) {}
 
+  async consultarCurso(idUsuario: string, idCurso: string, versionCurso: string) {
+    await this.catalogo.verificarAcceso(idUsuario, idCurso);
+    const estructura = await this.catalogo.obtenerEstructura(idCurso, versionCurso);
+    const documentos = await this.repositorio.listarPorUsuarioCursoVersion(
+      idUsuario,
+      idCurso,
+      versionCurso,
+    );
+    const porModulo = new Map(documentos.map((item) => [item.idModulo, item]));
+    const modulos = estructura.modulos.map((modulo) => {
+      const obligatorias = modulo.lecciones.filter((leccion) => leccion.obligatoria !== false);
+      const progreso = porModulo.get(modulo.idModulo);
+      const completadas = new Set(progreso?.leccionesCompletadas ?? []);
+      const leccionesCompletadas = obligatorias.filter((leccion) =>
+        completadas.has(leccion.idLeccion),
+      ).length;
+      return {
+        idModulo: modulo.idModulo,
+        leccionesCompletadasIds: [...completadas],
+        leccionesCompletadas,
+        totalLecciones: obligatorias.length,
+        porcentaje: obligatorias.length === 0
+          ? 0
+          : Math.round((leccionesCompletadas / obligatorias.length) * 100),
+        completado: obligatorias.length > 0 && leccionesCompletadas === obligatorias.length,
+      };
+    });
+    const totalLecciones = modulos.reduce((total, modulo) => total + modulo.totalLecciones, 0);
+    const leccionesCompletadas = modulos.reduce(
+      (total, modulo) => total + modulo.leccionesCompletadas,
+      0,
+    );
+    const ultimoAcceso = documentos
+      .map((item) => item.ultimoAcceso)
+      .filter((fecha): fecha is Date => fecha instanceof Date)
+      .sort((a, b) => b.getTime() - a.getTime())[0];
+
+    return {
+      idUsuario,
+      idCurso,
+      versionCurso,
+      curso: {
+        leccionesCompletadas,
+        totalLecciones,
+        porcentaje: totalLecciones === 0
+          ? 0
+          : Math.round((leccionesCompletadas / totalLecciones) * 100),
+      },
+      modulos,
+      ultimaLeccionId: documentos.at(-1)?.ultimaLeccionId,
+      ultimoAcceso,
+    };
+  }
+
   async completarLeccion(
     idUsuario: string,
     dto: CompletarLeccionModuloDto,
-    token: string,
     idempotencyKey: string,
   ) {
-    await this.catalogo.verificarAcceso(idUsuario, dto.idCurso, token);
+    await this.catalogo.verificarAcceso(idUsuario, dto.idCurso);
     const estructura = await this.catalogo.obtenerEstructura(
       dto.idCurso,
       dto.versionCurso,
-      token,
     );
     const moduloCatalogo = estructura.modulos.find((modulo) => modulo.idModulo === dto.idModulo);
     if (!moduloCatalogo) {
@@ -145,6 +197,7 @@ export class ProgresoModuloService {
       versionCurso: progreso.versionCurso,
       idModulo: progreso.idModulo,
       modulo: {
+        leccionesCompletadasIds: [...progreso.leccionesCompletadas],
         leccionesCompletadas: progreso.leccionesCompletadas.length,
         totalLecciones: progreso.leccionesObligatorias.length,
         porcentaje: progreso.porcentaje,

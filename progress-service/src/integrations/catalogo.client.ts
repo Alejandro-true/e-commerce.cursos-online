@@ -24,11 +24,14 @@ export interface EstructuraCursoCatalogo {
 
 @Injectable()
 export class CatalogoClient {
-  async verificarAcceso(idUsuario: string, idCurso: string, token: string): Promise<void> {
-    const path = this.path('CATALOGO_ACCESS_PATH', '/api/accesos/{idUsuario}/{idCurso}')
+  async verificarAcceso(idUsuario: string, idCurso: string): Promise<void> {
+    const path = this.path(
+      'CATALOGO_ACCESS_PATH',
+      '/api/internal/progreso/cursos/{idCurso}/acceso/{idUsuario}',
+    )
       .replace('{idUsuario}', encodeURIComponent(idUsuario))
       .replace('{idCurso}', encodeURIComponent(idCurso));
-    const respuesta = await this.get(path, token);
+    const respuesta = await this.get(path);
     if (respuesta.status === 403 || respuesta.status === 404) {
       throw new ForbiddenException('El usuario no tiene acceso vigente a este curso');
     }
@@ -41,15 +44,14 @@ export class CatalogoClient {
   async obtenerEstructura(
     idCurso: string,
     versionCurso: string,
-    token: string,
   ): Promise<EstructuraCursoCatalogo> {
     const path = this.path(
       'CATALOGO_STRUCTURE_PATH',
-      '/api/cursos/{idCurso}/versiones/{versionCurso}',
+      '/api/internal/progreso/cursos/{idCurso}/versiones/{versionCurso}',
     )
       .replace('{idCurso}', encodeURIComponent(idCurso))
       .replace('{versionCurso}', encodeURIComponent(versionCurso));
-    const respuesta = await this.get(path, token);
+    const respuesta = await this.get(path);
     const estructura = (await respuesta.json()) as EstructuraCursoCatalogo;
     if (
       estructura.idCurso !== idCurso ||
@@ -65,15 +67,18 @@ export class CatalogoClient {
     return process.env[variable] || fallback;
   }
 
-  private async get(path: string, token: string): Promise<Response> {
+  private async get(path: string): Promise<Response> {
     const baseUrl = process.env.CATALOGO_SERVICE_URL;
-    if (!baseUrl) {
-      throw new ServiceUnavailableException('CATALOGO_SERVICE_URL no está configurada');
+    const serviceKey = process.env.SERVICE_API_KEY;
+    if (!baseUrl || !serviceKey) {
+      throw new ServiceUnavailableException(
+        'CATALOGO_SERVICE_URL y SERVICE_API_KEY deben estar configuradas',
+      );
     }
     let respuesta: Response;
     try {
       respuesta = await fetch(new URL(path, baseUrl), {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        headers: { 'X-Service-Key': serviceKey, Accept: 'application/json' },
         signal: AbortSignal.timeout(4000),
       });
     } catch {

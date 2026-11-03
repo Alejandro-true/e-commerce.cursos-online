@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class ComprasCuentaController {
     public record CompraSolicitada(UUID cursoId) {}
     public record CompraCreada(UUID compraId, String estado) {}
     public record MiIdentidad(String id, String nombre, String email, String rol) {}
+    public record TokenCsrf(String nombreHeader, String token) {}
 
     private final CheckoutService checkout;
     private final MisCursosService misCursos;
@@ -51,6 +53,11 @@ public class ComprasCuentaController {
     public MiIdentidad yo(@AuthenticationPrincipal UsuarioPrincipal principal) {
         String id = estudiante(principal);
         return new MiIdentidad(id, principal.getNombre(), principal.getUsername(), "ESTUDIANTE");
+    }
+
+    @GetMapping("/csrf")
+    public TokenCsrf csrf(CsrfToken token) {
+        return new TokenCsrf(token.getHeaderName(), token.getToken());
     }
 
     @PostMapping("/compras")

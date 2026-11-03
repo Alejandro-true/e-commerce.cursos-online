@@ -20,7 +20,7 @@ router = APIRouter(prefix="/logros", tags=["Logros"])
 )
 def get_my_achievements(
     db: Annotated[Session, Depends(get_db)],
-    estudiante_id: Annotated[int, Depends(get_current_student_id)],
+    estudiante_id: Annotated[str, Depends(get_current_student_id)],
 ):
     return get_student_achievements(
         db=db,

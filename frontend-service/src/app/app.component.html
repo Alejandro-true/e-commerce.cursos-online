@@ -1,0 +1,188 @@
+<header class="topbar">
+  <a class="brand" href="#inicio" (click)="$event.preventDefault(); backToCatalog()">
+    <span class="brand-mark">a</span>
+    <span>AulaBreve <small>aprende algo hoy</small></span>
+  </a>
+
+  <nav class="main-nav" aria-label="Navegación principal">
+    <button [class.active]="section() === 'catalog'" (click)="backToCatalog()">Explorar</button>
+    <button [class.active]="section() === 'progress'" [disabled]="!selectedCourse()" (click)="selectSection('progress')">Mi aprendizaje</button>
+    <button [class.active]="section() === 'community'" [disabled]="!selectedCourse()" (click)="selectSection('community')">Comunidad</button>
+  </nav>
+
+  @if (currentStudent(); as student) {
+    <div class="account-chip"><span>Conectada como</span><strong>{{ student.nombre }}</strong><a href="/cuenta">Mi cuenta</a></div>
+  } @else {
+    <div class="account-links"><a href="/ingresar">Iniciar sesión</a><a href="/registro">Crear cuenta</a></div>
+  }
+</header>
+
+<main>
+  <section class="hero" id="inicio">
+    <div class="hero-copy">
+      <p class="eyebrow">PEQUEÑAS LECCIONES, GRANDES AVANCES</p>
+      <h1>Tu siguiente habilidad<br /><em>empieza aquí.</em></h1>
+      <p class="hero-description">Explora cursos, guarda tu progreso y celebra cada módulo que completas.</p>
+      <button class="primary-button" (click)="backToCatalog()">Explorar cursos <span aria-hidden="true">↗</span></button>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="sun"></div>
+      <div class="orbit orbit-one"></div>
+      <div class="orbit orbit-two"></div>
+      <div class="book-card"><span>✦</span><strong>15 min</strong><small>para aprender algo nuevo</small></div>
+      <div class="floating-note note-one">un paso a la vez</div>
+      <div class="floating-note note-two">✦ +10 puntos</div>
+    </div>
+  </section>
+
+  <section class="quick-stats" aria-label="Resumen de aprendizaje">
+    <article><span class="stat-icon lilac">▤</span><div><strong>{{ courses().length }}</strong><small>cursos disponibles</small></div></article>
+    <article><span class="stat-icon mint">✦</span><div><strong>{{ achievements()?.puntos_totales ?? 0 }}</strong><small>puntos ganados</small></div></article>
+    <article><span class="stat-icon peach">♧</span><div><strong>{{ achievements()?.insignias?.length ?? 0 }}</strong><small>módulos celebrados</small></div></article>
+    <button class="refresh-button" aria-label="Actualizar información" (click)="refreshCourses(); refreshAchievements()">↻</button>
+  </section>
+
+  @if (error()) { <div class="alert error" role="alert">{{ error() }}</div> }
+  @if (notice()) { <div class="alert success" role="status">{{ notice() }}</div> }
+
+  @if (section() === 'catalog') {
+    <section class="content-section">
+      <div class="section-heading">
+        <div><p class="eyebrow">ELIGE TU PRÓXIMO PASO</p><h2>Cursos para ti</h2></div>
+        <span class="muted">Contenido publicado por Catalog Service</span>
+      </div>
+
+      @if (loading()) { <div class="loading-line">Cargando catálogo…</div> }
+      @else if (courses().length === 0) {
+        <div class="empty-state"><span>✦</span><h3>Aún no hay cursos publicados</h3><p>Cuando Catalog Service publique contenido, aparecerá aquí.</p></div>
+      } @else {
+        <div class="course-grid">
+          @for (course of courses(); track course.id; let index = $index) {
+            <article class="course-card">
+              <div class="course-art" [class]="'course-art palette-' + (index % 4)">
+                @if (course.miniaturaUrl) { <img [src]="course.miniaturaUrl" [alt]="course.titulo" /> }
+                @else { <span class="course-glyph">{{ index % 2 === 0 ? '✳' : '◒' }}</span> }
+                <span class="level-chip">{{ course.nivel }}</span>
+              </div>
+              <div class="course-card-body">
+                <div class="course-meta"><span>{{ course.categoria?.nombre ?? 'Micro-aprendizaje' }}</span><span>◷ Lecciones cortas</span></div>
+                <h3>{{ course.titulo }}</h3>
+                <p>{{ course.descripcion }}</p>
+                <button class="text-button" (click)="openCourse(course)">Ver curso <span>→</span></button>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  @if (section() === 'progress' && selectedCourse(); as course) {
+    <section class="content-section course-detail">
+      <div class="section-heading course-title-row">
+        <div><button class="back-link" (click)="backToCatalog()">← Volver al catálogo</button><p class="eyebrow">{{ course.categoria?.nombre ?? 'CURSO' }} · VERSIÓN {{ course.numeroVersion }}</p><h2>{{ course.titulo }}</h2><p class="course-description">{{ course.descripcion }}</p></div>
+        <div class="course-actions">
+          @if (studentId()) {
+            <button class="primary-button" (click)="requestPurchase()" [disabled]="requestingPurchase()">
+              {{ requestingPurchase() ? 'Enviando…' : 'Solicitar acceso al curso' }}
+            </button>
+          }
+          <button class="secondary-button" (click)="selectSection('community')">Ver reseñas y logros</button>
+        </div>
+      </div>
+
+      <div class="progress-overview">
+        <div class="progress-copy"><span class="progress-icon">↗</span><div><strong>Tu avance</strong><small>{{ progress()?.curso?.leccionesCompletadas ?? 0 }} de {{ progress()?.curso?.totalLecciones ?? totalLessons(course) }} lecciones</small></div></div>
+        <div class="progress-track"><span [style.width.%]="progress()?.curso?.porcentaje ?? 0"></span></div>
+        <strong class="progress-number">{{ progress()?.curso?.porcentaje ?? 0 }}%</strong>
+      </div>
+
+      @if (activeVideoUrl(); as videoUrl) {
+        <div class="video-player"><video controls autoplay [src]="videoUrl"></video><p>Enlace protegido temporalmente por Catalog Service.</p></div>
+      }
+
+      @if (loading()) { <div class="loading-line">Cargando contenido…</div> }
+      <div class="module-list">
+        @for (module of course.modulos; track module.id; let moduleIndex = $index) {
+          <article class="module-card">
+            <div class="module-heading">
+              <span class="module-number">{{ (moduleIndex + 1).toString().padStart(2, '0') }}</span>
+              <div class="module-title"><h3>{{ module.titulo }}</h3><p>{{ module.descripcion || module.lecciones.length + ' lecciones' }}</p></div>
+              <div class="module-percent"><strong>{{ moduleProgress(module.id) }}%</strong><span>completado</span></div>
+            </div>
+            <div class="lesson-list">
+              @for (lesson of module.lecciones; track lesson.id) {
+                <div class="lesson-row">
+                  <span class="lesson-check" [class.done]="isLessonComplete(module.id, lesson.id)">{{ isLessonComplete(module.id, lesson.id) ? '✓' : '▶' }}</span>
+                  <div class="lesson-name"><strong>{{ lesson.titulo }}</strong><small>{{ lesson.tipo }}@if (lesson.duracionSegundos) { · {{ lesson.duracionSegundos / 60 | number: '1.0-0' }} min }</small></div>
+                  @if (lesson.tipo === 'VIDEO') {
+                    <button class="video-button" [disabled]="!studentId()" (click)="playLesson(lesson.id)">Ver video</button>
+                  }
+                  <button
+                    class="lesson-button"
+                    [disabled]="!studentId() || !lesson.obligatorio || isLessonComplete(module.id, lesson.id) || busyLesson() === lesson.id"
+                    (click)="completeLesson(module, lesson.id)"
+                  >
+                    @if (!lesson.obligatorio) { Opcional }
+                    @else if (isLessonComplete(module.id, lesson.id)) { Completada }
+                    @else if (busyLesson() === lesson.id) { Guardando… }
+                    @else { Completar }
+                  </button>
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  }
+
+  @if (section() === 'community' && selectedCourse(); as course) {
+    <section class="content-section community-section">
+      <div class="section-heading">
+        <div><button class="back-link" (click)="selectSection('progress')">← Volver al curso</button><p class="eyebrow">APRENDEMOS MEJOR EN COMUNIDAD</p><h2>{{ course.titulo }}</h2></div>
+        <button class="secondary-button" (click)="refreshAchievements()">Actualizar insignias</button>
+      </div>
+
+      <div class="community-grid">
+        <section class="panel review-panel">
+          <div class="panel-heading"><div><p class="eyebrow">OPINIONES</p><h3>Reseñas del curso</h3></div><span class="review-count">{{ reviews().length }}</span></div>
+          <form class="review-form" (ngSubmit)="submitReview()">
+            @if (!studentId()) { <p class="login-hint">Inicia sesión para publicar una reseña.</p> }
+            <label>Tu calificación
+              <select name="rating" [(ngModel)]="reviewRating">
+                <option [ngValue]="5">★★★★★ — Excelente</option>
+                <option [ngValue]="4">★★★★☆ — Muy bueno</option>
+                <option [ngValue]="3">★★★☆☆ — Bueno</option>
+                <option [ngValue]="2">★★☆☆☆ — Puede mejorar</option>
+                <option [ngValue]="1">★☆☆☆☆ — No era lo que esperaba</option>
+              </select>
+            </label>
+            <label>Comparte tu experiencia
+              <textarea name="comment" [(ngModel)]="reviewComment" rows="3" maxlength="2000" placeholder="¿Qué te resultó útil?"></textarea>
+            </label>
+            <button class="primary-button" type="submit" [disabled]="!studentId()">Publicar reseña <span>↗</span></button>
+          </form>
+          <div class="review-list">
+            @for (review of reviews(); track review.id) {
+              <article class="review-item"><div class="review-top"><span class="review-stars">{{ '★'.repeat(review.calificacion) }}{{ '☆'.repeat(5 - review.calificacion) }}</span><time>{{ review.creada_en | date: 'mediumDate' }}</time></div><p>{{ review.comentario || 'Sin comentario.' }}</p><small>Estudiante {{ review.estudiante_id }}</small></article>
+            } @empty { <div class="empty-inline">Todavía no hay reseñas visibles para este curso.</div> }
+          </div>
+        </section>
+
+        <aside class="panel achievement-panel">
+          <p class="eyebrow">TUS LOGROS</p><h3>Lo que ya conseguiste</h3>
+          <div class="points-total"><span>✦</span><div><strong>{{ achievements()?.puntos_totales ?? 0 }}</strong><small>puntos acumulados</small></div></div>
+          <div class="badge-list">
+            @for (badge of achievements()?.insignias ?? []; track badge.modulo_id) {
+              <article class="badge-item"><span class="badge-icon">✦</span><div><strong>{{ badge.insignia }}</strong><small>Módulo {{ badge.modulo_id }} · {{ badge.otorgada_en | date: 'mediumDate' }}</small></div></article>
+            } @empty { <div class="empty-inline">Completa un módulo para ganar tu primera insignia.</div> }
+          </div>
+          <p class="reward-note">Cada módulo completado otorga 10 puntos. Community Service recibe el evento desde Progress Service.</p>
+        </aside>
+      </div>
+    </section>
+  }
+</main>
+
+<footer><span class="brand-mark small-mark">a</span><span>AulaBreve</span><small>Un poco cada día también es progreso.</small></footer>

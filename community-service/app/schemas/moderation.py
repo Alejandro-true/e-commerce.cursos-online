@@ -17,6 +17,6 @@ class ReviewModerationResponse(BaseModel):
 
     id: int
     resena_id: int
-    administrador_id: int
+    administrador_id: str
     motivo: str
     moderada_en: datetime

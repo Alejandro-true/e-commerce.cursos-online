@@ -49,7 +49,7 @@ def grant_module_reward(
         raise
 
 
-def get_total_points(db: Session, estudiante_id: int) -> int:
+def get_total_points(db: Session, estudiante_id: str) -> int:
     statement = select(
         func.coalesce(func.sum(ModuleReward.puntos), 0)
     ).where(
@@ -60,7 +60,7 @@ def get_total_points(db: Session, estudiante_id: int) -> int:
 
 def get_student_achievements(
     db: Session,
-    estudiante_id: int,
+    estudiante_id: str,
 ) -> StudentAchievementsResponse:
     statement = (
         select(ModuleReward)
